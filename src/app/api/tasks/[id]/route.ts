@@ -209,10 +209,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         { error: "Task not found" },
         { status: 404 }
       )
-    }
-
-    // Prepare update data
-    const updateData: any = {}
+    }    // Prepare update data
+    const updateData: Record<string, unknown> = {}
     
     if (validatedData.title !== undefined) updateData.title = validatedData.title
     if (validatedData.description !== undefined) updateData.description = validatedData.description
@@ -224,9 +222,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
     if (validatedData.assigneeId !== undefined) updateData.assigneeId = validatedData.assigneeId || null
     if (validatedData.epicId !== undefined) updateData.epicId = validatedData.epicId || null
-    if (validatedData.sprintId !== undefined) updateData.sprintId = validatedData.sprintId || null
-
-    // Update the task
+    if (validatedData.sprintId !== undefined) updateData.sprintId = validatedData.sprintId || null    // Update the task
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const updatedTask = await prisma.task.update({
       where: { id },
       data: updateData,

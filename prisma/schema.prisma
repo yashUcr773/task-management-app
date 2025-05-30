@@ -23,7 +23,6 @@ model User {
   notifications Json?     // Store notification preferences as JSON
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-
   // Relations
   accounts          Account[]
   sessions          Session[]
@@ -34,6 +33,7 @@ model User {
   comments          Comment[]
   activities        Activity[]
   userNotifications Notification[]
+  attachments       Attachment[]     @relation("AttachmentUploader")
   
   @@map("users")
 }
@@ -192,12 +192,12 @@ model Task {
   team      Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
   epic      Epic?  @relation(fields: [epicId], references: [id])
   sprint    Sprint? @relation(fields: [sprintId], references: [id])
-  
-  tags         TaskTag[]
+    tags         TaskTag[]
   comments     Comment[]
   activities   Activity[]
   dependencies TaskDependency[] @relation("DependentTask")
   dependents   TaskDependency[] @relation("DependencyTask")
+  attachments  Attachment[]
 
   @@map("tasks")
 }
@@ -233,9 +233,32 @@ model TaskDependency {
 
   dependent  Task @relation("DependentTask", fields: [dependentId], references: [id], onDelete: Cascade)
   dependency Task @relation("DependencyTask", fields: [dependencyId], references: [id], onDelete: Cascade)
-
   @@unique([dependentId, dependencyId])
   @@map("task_dependencies")
+}
+
+// File Attachments
+model Attachment {
+  id          String   @id @default(cuid())
+  originalName String  // Original filename when uploaded
+  fileName    String   // Stored filename (with unique identifier)
+  filePath    String   // Full path to the file
+  fileSize    Int      // Size in bytes
+  mimeType    String   // MIME type of the file
+  
+  // Foreign Keys
+  taskId      String
+  uploaderId  String
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploader    User     @relation("AttachmentUploader", fields: [uploaderId], references: [id])
+  
+  @@map("attachments")
 }
 
 // Comments & Activity

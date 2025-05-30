@@ -142,10 +142,8 @@ export async function GET(request: NextRequest) {
         { error: "User not found" },
         { status: 404 }
       )
-    }
-
-    // Build where clause
-    const where: any = {}
+    }    // Build where clause
+    const where: Record<string, unknown> = {}
 
     if (organizationId) {
       // Check if user has access to the organization

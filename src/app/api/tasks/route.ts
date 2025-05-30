@@ -246,10 +246,8 @@ export async function GET(request: NextRequest) {
           totalPages: 0
         }
       })
-    }
-
-    // Build filters
-    const where: any = {
+    }    // Build filters
+    const where: Record<string, unknown> = {
       organizationId: {
         in: orgIds
       }

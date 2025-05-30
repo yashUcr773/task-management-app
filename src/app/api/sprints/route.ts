@@ -115,10 +115,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    const teamIds = user.teamMembers.map(tm => tm.teamId)
-
-    // Build where clause
-    const where: any = {
+    const teamIds = user.teamMembers.map(tm => tm.teamId)    // Build where clause
+    const where: Record<string, unknown> = {
       teamId: {
         in: teamIds
       }

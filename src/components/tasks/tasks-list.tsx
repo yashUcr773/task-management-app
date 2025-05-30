@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal, Calendar, MessageSquare, Paperclip } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // Same mock data as other components
 const mockTasks = [
@@ -69,11 +70,20 @@ const mockTasks = [
 
 interface TasksListProps {
   searchQuery: string
+  tasks?: any[]
+  isLoading?: boolean
 }
 
-export function TasksList({ searchQuery }: TasksListProps) {
-  const [tasks, setTasks] = useState(mockTasks)
+export function TasksList({ searchQuery, tasks: externalTasks, isLoading }: TasksListProps) {
+  const [tasks, setTasks] = useState(externalTasks || mockTasks)
   const [selectedTasks, setSelectedTasks] = useState<string[]>([])
+
+  // Update tasks when external tasks change
+  useEffect(() => {
+    if (externalTasks) {
+      setTasks(externalTasks)
+    }
+  }, [externalTasks])
 
   const filteredTasks = tasks.filter(task => 
     task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -135,10 +145,39 @@ export function TasksList({ searchQuery }: TasksListProps) {
             Delete
           </Button>
         </div>
-      )}
-
-      <div className="space-y-2">
-        {filteredTasks.map((task) => (
+      )}      <div className="space-y-2">
+        {isLoading ? (
+          // Loading skeleton cards
+          Array.from({ length: 5 }).map((_, index) => (
+            <Card key={index}>
+              <CardContent className="p-4">
+                <div className="flex items-start space-x-4">
+                  <Skeleton className="h-4 w-4 mt-1" />
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2">
+                        <Skeleton className="h-5 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Skeleton className="h-6 w-16 rounded-full" />
+                        <Skeleton className="h-6 w-12 rounded-full" />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <Skeleton className="h-6 w-20 rounded-full" />
+                        <Skeleton className="h-6 w-12 rounded-full" />
+                      </div>
+                      <Skeleton className="h-8 w-8" />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          filteredTasks.map((task) => (
           <Card key={task.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-4">
               <div className="flex items-start space-x-4">
@@ -186,7 +225,7 @@ export function TasksList({ searchQuery }: TasksListProps) {
 
                   {task.tags && task.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
-                      {task.tags.map((tag, index) => (
+                      {task.tags.map((tag: any, index: number) => (
                         <Badge 
                           key={index} 
                           variant="outline" 
@@ -231,16 +270,14 @@ export function TasksList({ searchQuery }: TasksListProps) {
                           </span>
                         </div>
                       )}
-                    </div>
-
-                    <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                    </div>                    <div className="flex items-center space-x-2 text-xs text-muted-foreground">
                       <div className="flex items-center space-x-1">
                         <MessageSquare className="h-3 w-3" />
-                        <span>0</span>
+                        <span>{task._count?.comments || 0}</span>
                       </div>
                       <div className="flex items-center space-x-1">
                         <Paperclip className="h-3 w-3" />
-                        <span>0</span>
+                        <span>{task._count?.attachments || 0}</span>
                       </div>
                       <span>
                         Created {formatDistanceToNow(task.createdAt, { addSuffix: true })}
@@ -248,12 +285,11 @@ export function TasksList({ searchQuery }: TasksListProps) {
                     </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
+              </div>            </CardContent>
           </Card>
-        ))}
+        )))}
 
-        {filteredTasks.length === 0 && (
+        {!isLoading && filteredTasks.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             No tasks found matching your search.
           </div>

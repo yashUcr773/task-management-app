@@ -41,10 +41,8 @@ export async function GET(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
-    }
-
-    // Build where clause for filtering
-    const where: any = {}
+    }    // Build where clause for filtering
+    const where: Record<string, unknown> = {}
 
     if (taskId) {
       where.taskId = taskId

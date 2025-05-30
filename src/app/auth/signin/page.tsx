@@ -34,10 +34,9 @@ export default function SignIn() {
         const session = await getSession()
         if (session) {
           router.push("/dashboard")
-          router.refresh()
-        }
+          router.refresh()        }
       }
-    } catch (error) {
+    } catch {
       toast.error("Something went wrong")
     }
 
@@ -53,9 +52,8 @@ export default function SignIn() {
           TaskFlow
         </div>
         <div className="relative z-20 mt-auto">
-          <blockquote className="space-y-2">
-            <p className="text-lg">
-              "TaskFlow has revolutionized how our team manages projects. The intuitive interface and powerful features make collaboration seamless."
+          <blockquote className="space-y-2">            <p className="text-lg">
+              &quot;TaskFlow has revolutionized how our team manages projects. The intuitive interface and powerful features make collaboration seamless.&quot;
             </p>
             <footer className="text-sm">Sofia Davis, Product Manager</footer>
           </blockquote>
@@ -102,9 +100,8 @@ export default function SignIn() {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Signing in..." : "Sign in"}
                 </Button>
-              </form>
-              <div className="mt-4 text-center text-sm">
-                Don't have an account?{" "}
+              </form>              <div className="mt-4 text-center text-sm">
+                Don&apos;t have an account?{" "}
                 <Link href="/auth/signup" className="underline">
                   Sign up
                 </Link>

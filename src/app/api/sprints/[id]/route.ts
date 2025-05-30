@@ -143,10 +143,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (!existingSprint) {
       return NextResponse.json({ error: "Sprint not found" }, { status: 404 })
-    }
-
-    // Prepare update data
-    const updateData: any = {}
+    }    // Prepare update data
+    const updateData: Record<string, unknown> = {}
     
     if (validatedData.name !== undefined) updateData.name = validatedData.name
     if (validatedData.startDate !== undefined) updateData.startDate = new Date(validatedData.startDate)

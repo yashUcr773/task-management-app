@@ -22,6 +22,10 @@ interface Task {
     image?: string | null
   }
   tags?: Array<{ name: string; color: string }>
+  _count?: {
+    comments: number
+    attachments: number
+  }
 }
 
 interface TaskCardProps {
@@ -148,13 +152,11 @@ export function TaskCard({ task, isDragging, onClick }: TaskCardProps) {
                   {task.storyPoints} pts
                 </Badge>
               )}
-            </div>
-
-            <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+            </div>            <div className="flex items-center space-x-1 text-xs text-muted-foreground">
               <MessageSquare className="h-3 w-3" />
-              <span>0</span>
+              <span>{task._count?.comments || 0}</span>
               <Paperclip className="h-3 w-3" />
-              <span>0</span>
+              <span>{task._count?.attachments || 0}</span>
             </div>
           </div>
 

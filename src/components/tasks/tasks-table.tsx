@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState, useEffect } from "react"
 import {
   Table,
   TableBody,
@@ -19,8 +19,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, ArrowUpDown } from "lucide-react"
+import { MoreHorizontal, ArrowUpDown, MessageSquare, Paperclip } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
+import { Skeleton } from "@/components/ui/skeleton"
 
 // Mock data - same as Kanban board
 const mockTasks = [
@@ -76,13 +77,22 @@ const mockTasks = [
 
 interface TasksTableProps {
   searchQuery: string
+  tasks?: any[]
+  isLoading?: boolean
 }
 
-export function TasksTable({ searchQuery }: TasksTableProps) {
-  const [tasks, setTasks] = useState(mockTasks)
+export function TasksTable({ searchQuery, tasks: externalTasks, isLoading }: TasksTableProps) {
+  const [tasks, setTasks] = useState(externalTasks || mockTasks)
   const [selectedTasks, setSelectedTasks] = useState<string[]>([])
   const [sortField, setSortField] = useState<string>("")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+
+  // Update tasks when external tasks change
+  useEffect(() => {
+    if (externalTasks) {
+      setTasks(externalTasks)
+    }
+  }, [externalTasks])
 
   const filteredTasks = tasks.filter(task => 
     task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -142,7 +152,6 @@ export function TasksTable({ searchQuery }: TasksTableProps) {
         : filteredTasks.map(task => task.id)
     )
   }
-
   return (
     <div className="space-y-4">
       {selectedTasks.length > 0 && (
@@ -191,15 +200,30 @@ export function TasksTable({ searchQuery }: TasksTableProps) {
                   Due Date
                   <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
-              </TableHead>
-              <TableHead>Story Points</TableHead>
+              </TableHead>              <TableHead>Story Points</TableHead>
               <TableHead>Tags</TableHead>
+              <TableHead>Activity</TableHead>
               <TableHead className="w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredTasks.map((task) => (
-              <TableRow key={task.id}>
+            {isLoading ? (
+              // Loading skeleton rows
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-full" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-12 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
+                  <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                </TableRow>
+              ))            ) : (
+              filteredTasks.map((task) => (
+                <TableRow key={task.id}>
                 <TableCell>
                   <Checkbox
                     checked={selectedTasks.includes(task.id)}
@@ -253,7 +277,7 @@ export function TasksTable({ searchQuery }: TasksTableProps) {
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-wrap gap-1">
-                    {task.tags?.slice(0, 2).map((tag, index) => (
+                    {task.tags?.slice(0, 2).map((tag: any, index: number) => (
                       <Badge 
                         key={index} 
                         variant="outline" 
@@ -262,12 +286,23 @@ export function TasksTable({ searchQuery }: TasksTableProps) {
                       >
                         {tag.name}
                       </Badge>
-                    ))}
-                    {task.tags && task.tags.length > 2 && (
+                    ))}                    {task.tags && task.tags.length > 2 && (
                       <Badge variant="outline" className="text-xs">
                         +{task.tags.length - 2}
                       </Badge>
                     )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center space-x-3 text-xs text-muted-foreground">
+                    <div className="flex items-center space-x-1">
+                      <MessageSquare className="h-3 w-3" />
+                      <span>{task._count?.comments || 0}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Paperclip className="h-3 w-3" />
+                      <span>{task._count?.attachments || 0}</span>
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -276,8 +311,7 @@ export function TasksTable({ searchQuery }: TasksTableProps) {
                       <Button variant="ghost" className="h-8 w-8 p-0">
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    </DropdownMenuTrigger>                    <DropdownMenuContent align="end">
                       <DropdownMenuItem>Edit</DropdownMenuItem>
                       <DropdownMenuItem>Duplicate</DropdownMenuItem>
                       <DropdownMenuItem>Archive</DropdownMenuItem>
@@ -285,10 +319,10 @@ export function TasksTable({ searchQuery }: TasksTableProps) {
                         Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+                  </DropdownMenu>                </TableCell>
               </TableRow>
-            ))}
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

@@ -19,6 +19,7 @@ import {
   MoreHorizontal
 } from "lucide-react"
 import { TaskComments } from "./task-comments"
+import TaskAttachments from "./task-attachments"
 import { toast } from "sonner"
 import { format } from "date-fns"
 
@@ -27,6 +28,21 @@ interface User {
   name: string | null
   email: string
   image: string | null
+}
+
+interface Attachment {
+  id: string;
+  originalName: string;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  mimeType: string;
+  createdAt: string;
+  uploader: {
+    id: string;
+    name: string;
+    email: string;
+  };
 }
 
 interface Team {
@@ -103,25 +119,47 @@ export function TaskDetailsModal({
 }: TaskDetailsModalProps) {
   const [task, setTask] = useState<TaskDetails | null>(null)
   const [loading, setLoading] = useState(false)
+  const [attachments, setAttachments] = useState<Attachment[]>([])
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>()
 
   useEffect(() => {
     if (open && taskId) {
       fetchTaskDetails()
     }
   }, [open, taskId])
-
   const fetchTaskDetails = async () => {
     if (!taskId) return
 
     try {
       setLoading(true)
-      const response = await fetch(`/api/tasks/${taskId}`)
-      if (!response.ok) {
+      
+      // Fetch task details and attachments in parallel
+      const [taskResponse, attachmentsResponse, userResponse] = await Promise.all([
+        fetch(`/api/tasks/${taskId}`),
+        fetch(`/api/tasks/${taskId}/attachments`),
+        fetch('/api/user')
+      ])
+
+      if (!taskResponse.ok) {
         throw new Error("Failed to fetch task details")
       }
 
-      const data = await response.json()
-      setTask(data.task)
+      const taskData = await taskResponse.json()
+      setTask(taskData.task)
+
+      // Handle attachments response
+      if (attachmentsResponse.ok) {
+        const attachmentsData = await attachmentsResponse.json()
+        setAttachments(attachmentsData)
+      } else {
+        setAttachments([])
+      }
+
+      // Handle user response
+      if (userResponse.ok) {
+        const userData = await userResponse.json()
+        setCurrentUserId(userData.id)
+      }
     } catch (error) {
       console.error("Failed to fetch task details:", error)
       toast.error("Failed to load task details")
@@ -336,8 +374,17 @@ export function TaskDetailsModal({
                 {task.isRecurring && (
                   <div className="text-blue-600">🔄 This is a recurring task</div>
                 )}
-              </div>
-            </div>
+              </div>            </div>
+
+            <Separator />
+
+            {/* Attachments Section */}
+            <TaskAttachments
+              taskId={task.id}
+              attachments={attachments}
+              onAttachmentsChange={setAttachments}
+              currentUserId={currentUserId}
+            />
 
             <Separator />
 

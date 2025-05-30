@@ -52,12 +52,11 @@ export default function SignUp() {
 
       if (response.ok) {
         toast.success("Account created successfully!")
-        router.push("/auth/signin")
-      } else {
+        router.push("/auth/signin")      } else {
         const data = await response.json()
         toast.error(data.message || "Something went wrong")
       }
-    } catch (error) {
+    } catch {
       toast.error("Something went wrong")
     }
 
@@ -73,9 +72,8 @@ export default function SignUp() {
           TaskFlow
         </div>
         <div className="relative z-20 mt-auto">
-          <blockquote className="space-y-2">
-            <p className="text-lg">
-              "Join thousands of teams who trust TaskFlow to organize their work and boost productivity."
+          <blockquote className="space-y-2">            <p className="text-lg">
+              &quot;Join thousands of teams who trust TaskFlow to organize their work and boost productivity.&quot;
             </p>
             <footer className="text-sm">Join TaskFlow Today</footer>
           </blockquote>

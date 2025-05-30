@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { 
   CheckSquare, 
   Clock, 
@@ -64,7 +64,7 @@ export function DashboardOverview() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Good morning! 👋</h1>
-          <p className="text-muted-foreground">Here's what's happening with your projects today.</p>
+          <p className="text-muted-foreground">Here&apos;s what&apos;s happening with your projects today.</p>
         </div>
         <Button>
           <Plus className="mr-2 h-4 w-4" />

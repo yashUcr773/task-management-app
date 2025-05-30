@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -142,14 +142,14 @@ export function ActivityFeed() {
     total: 0,
     pages: 0,
   })
-  
-  const [filters, setFilters] = useState({
+    const [filters, setFilters] = useState({
     taskId: "",
     type: "all",
   })
 
   useEffect(() => {
     fetchActivities(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters])
 
   const fetchActivities = async (reset = false) => {

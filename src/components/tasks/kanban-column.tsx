@@ -20,6 +20,10 @@ interface Task {
     image?: string | null
   }
   tags?: Array<{ name: string; color: string }>
+  _count?: {
+    comments: number
+    attachments: number
+  }
 }
 
 interface KanbanColumnProps {

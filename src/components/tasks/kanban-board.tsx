@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Skeleton } from "@/components/ui/skeleton"
 import { KanbanColumn } from "./kanban-column"
 import { TaskCard } from "./task-card"
 import { TaskStatus } from "@prisma/client"
@@ -71,11 +72,19 @@ const columns = [
 interface KanbanBoardProps {
   searchQuery: string
   onTaskClick?: (task: any) => void
+  tasks?: any[]
+  isLoading?: boolean
 }
 
-export function KanbanBoard({ searchQuery, onTaskClick }: KanbanBoardProps) {
-  const [tasks, setTasks] = useState(mockTasks)
+export function KanbanBoard({ searchQuery, onTaskClick, tasks: externalTasks, isLoading }: KanbanBoardProps) {
+  const [tasks, setTasks] = useState(externalTasks || mockTasks)
   const [activeTask, setActiveTask] = useState<typeof mockTasks[0] | null>(null)
+  // Update tasks when external tasks change
+  React.useEffect(() => {
+    if (externalTasks) {
+      setTasks(externalTasks)
+    }
+  }, [externalTasks])
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -112,9 +121,41 @@ export function KanbanBoard({ searchQuery, onTaskClick }: KanbanBoardProps) {
 
     setActiveTask(null)
   }
-
   const getTasksByStatus = (status: string) => {
     return filteredTasks.filter(task => task.status === status)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex gap-6 overflow-x-auto pb-4">
+        {columns.map(column => (
+          <div key={column.id} className="flex-shrink-0 w-80">
+            <Card className={column.color}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-5 w-6 rounded-full" />
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="space-y-3 min-h-[200px]">
+                  {[1, 2, 3].map(i => (
+                    <Card key={i} className="p-3">
+                      <Skeleton className="h-4 w-3/4 mb-2" />
+                      <Skeleton className="h-3 w-1/2 mb-3" />
+                      <div className="flex items-center justify-between">
+                        <Skeleton className="h-6 w-16 rounded-full" />
+                        <Skeleton className="h-6 w-6 rounded-full" />
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ))}
+      </div>
+    )
   }
 
   return (
@@ -123,7 +164,8 @@ export function KanbanBoard({ searchQuery, onTaskClick }: KanbanBoardProps) {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-6 overflow-x-auto pb-4">        {columns.map(column => (
+      <div className="flex gap-6 overflow-x-auto pb-4">
+        {columns.map(column => (
           <KanbanColumn
             key={column.id}
             id={column.id}

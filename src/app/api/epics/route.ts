@@ -19,19 +19,17 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const validatedData = createEpicSchema.parse(body)
-
-    // Verify user has access to the organization
+    const validatedData = createEpicSchema.parse(body)    // Verify user has access to the organization
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
-        organizationMembers: {
+        organizations: {
           where: { organizationId: validatedData.organizationId }
         }
       }
     })
 
-    if (!user || user.organizationMembers.length === 0) {
+    if (!user || user.organizations.length === 0) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
@@ -81,13 +79,11 @@ export async function GET(request: NextRequest) {
     const organizationId = searchParams.get("organizationId")
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "10")
-    const offset = (page - 1) * limit
-
-    // Get user's organizations
+    const offset = (page - 1) * limit    // Get user's organizations
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
-        organizationMembers: {
+        organizations: {
           include: { organization: true }
         }
       }
@@ -97,10 +93,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    const orgIds = user.organizationMembers.map(om => om.organizationId)
-
-    // Build where clause
-    const where: any = {
+    const orgIds = user.organizations.map((om: { organizationId: string }) => om.organizationId)// Build where clause
+    const where: Record<string, unknown> = {
       organizationId: {
         in: orgIds
       }
