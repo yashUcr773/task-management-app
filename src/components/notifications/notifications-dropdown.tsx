@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -35,7 +33,7 @@ interface Notification {
   type: "info" | "success" | "warning" | "error"
   readAt: string | null
   actionUrl?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
   createdAt: string
   updatedAt: string
 }

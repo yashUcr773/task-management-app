@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { KanbanBoard } from "@/components/tasks/kanban-board"
 import { TasksTable } from "@/components/tasks/tasks-table"
 import { TasksList } from "@/components/tasks/tasks-list"
-import TasksCalendar from "@/components/tasks/tasks-calendar"
+import {TasksCalendar} from "@/components/tasks/tasks-calendar"
 import { CreateTaskDialog } from "@/components/tasks/create-task-dialog"
 import { TaskDetailsModal } from "@/components/tasks/task-details-modal"
 import { useRealTimeTasks } from "@/hooks/use-real-time-tasks"
@@ -33,13 +33,13 @@ export function TasksView() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [taskDetailsOpen, setTaskDetailsOpen] = useState(false)
-  
-  // Real-time tasks hook with WebSocket integration
+    // Real-time tasks hook with WebSocket integration
   const {
     tasks,
     isLoading,
     error,
     taskStats,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     tasksByStatus,
     overdueTasks,
     refreshTasks,
@@ -53,7 +53,7 @@ export function TasksView() {
 
   // WebSocket connection status
   const { isConnected } = useWebSocket()
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
   const handleTaskSave = async (taskData: any) => {
     try {
       // In a real application, this would make an API call
@@ -69,6 +69,7 @@ export function TasksView() {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleTaskClick = (task: any) => {
     setSelectedTaskId(task.id)
     setTaskDetailsOpen(true)
@@ -78,9 +79,8 @@ export function TasksView() {
     refreshTasks()
     toast.info('Refreshing tasks...')
   }
-
   // Filter tasks based on search query
-  const filteredTasks = tasks.filter(task =>
+  const filteredTasks = tasks.filter((task: any) =>
     task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     task.assignee?.name?.toLowerCase().includes(searchQuery.toLowerCase())

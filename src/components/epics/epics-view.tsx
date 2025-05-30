@@ -66,7 +66,7 @@ export function EpicsView() {
     }
   }
 
-  const handleCreateEpic = async (epicData: any) => {
+  const handleCreateEpic = async (epicData: Record<string, unknown>) => {
     try {
       const response = await fetch('/api/epics', {
         method: 'POST',
@@ -91,7 +91,7 @@ export function EpicsView() {
     }
   }
 
-  const handleEditEpic = async (id: string, epicData: any) => {
+  const handleEditEpic = async (id: string, epicData: Record<string, unknown>) => {
     try {
       const response = await fetch(`/api/epics/${id}`, {
         method: 'PUT',
@@ -251,9 +251,8 @@ export function EpicsView() {
             setEditingEpic(null)
           }
         }}
-        epic={editingEpic}
-        onSave={editingEpic ? 
-          (data: any) => handleEditEpic(editingEpic.id, data) : 
+        epic={editingEpic}        onSave={editingEpic ? 
+          (data: Record<string, unknown>) => handleEditEpic(editingEpic.id, data) : 
           handleCreateEpic
         }
       />

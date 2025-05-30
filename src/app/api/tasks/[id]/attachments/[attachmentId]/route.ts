@@ -8,7 +8,7 @@ import { join } from 'path';
 // DELETE /api/tasks/[id]/attachments/[attachmentId] - Delete attachment
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; attachmentId: string } }
+  { params }: { params: Promise<{ id: string; attachmentId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -16,11 +16,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id, attachmentId } = await params
+
     // Find attachment and verify access
     const attachment = await prisma.attachment.findFirst({
       where: {
-        id: params.attachmentId,
-        taskId: params.id,
+        id: attachmentId,
+        taskId: id,
         task: {
           team: {
             members: {
@@ -51,17 +53,15 @@ export async function DELETE(
         { error: 'Permission denied. Only the uploader can delete this attachment.' },
         { status: 403 }
       );
-    }    // Delete file from disk
+    }// Delete file from disk
     try {
       const filePath = join(process.cwd(), 'public', attachment.filePath);
       await unlink(filePath);
     } catch {
       console.warn('File not found on disk:', attachment.filePath);
-    }
-
-    // Delete attachment record from database
+    }    // Delete attachment record from database
     await prisma.attachment.delete({
-      where: { id: params.attachmentId },
+      where: { id: attachmentId },
     });
 
     // Create activity log
@@ -69,7 +69,7 @@ export async function DELETE(
       data: {
         type: 'TASK_UPDATED',
         description: `Removed attachment: ${attachment.originalName}`,
-        taskId: params.id,
+        taskId: id,
         userId: session.user.id,
         metadata: JSON.stringify({
           attachmentId: attachment.id,
@@ -92,7 +92,7 @@ export async function DELETE(
 // GET /api/tasks/[id]/attachments/[attachmentId] - Download attachment
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string; attachmentId: string } }
+  { params }: { params: Promise<{ id: string; attachmentId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -100,11 +100,13 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id, attachmentId } = await params
+
     // Find attachment and verify access
     const attachment = await prisma.attachment.findFirst({
       where: {
-        id: params.attachmentId,
-        taskId: params.id,
+        id: attachmentId,
+        taskId: id,
         task: {
           team: {
             members: {

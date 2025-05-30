@@ -48,7 +48,7 @@ export function TaskCard({ task, isDragging, onClick }: TaskCardProps) {
     transform: CSS.Transform.toString(transform),
     transition,
   }
-
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleClick = (e: React.MouseEvent) => {
     // Don't trigger click during drag operations
     if (!isDragging && !isSortableDragging && onClick) {

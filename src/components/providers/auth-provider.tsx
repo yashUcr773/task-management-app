@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext } from 'react'
 import { Session } from 'next-auth'
 import { SessionProvider, useSession } from 'next-auth/react'
 

@@ -9,16 +9,17 @@ import { v4 as uuidv4 } from 'uuid';
 // GET /api/tasks/[id]/attachments - List attachments for a task
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const attachments = await prisma.attachment.findMany({
-      where: { taskId: params.id },
+      where: { taskId: id },
       include: {
         uploader: {
           select: {
@@ -44,9 +45,10 @@ export async function GET(
 // POST /api/tasks/[id]/attachments - Upload file attachment
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -55,7 +57,7 @@ export async function POST(
     // Verify task exists and user has access
     const task = await prisma.task.findFirst({
       where: {
-        id: params.id,
+        id,
         team: {
           members: {
             some: {
@@ -125,9 +127,8 @@ export async function POST(
         originalName: file.name,
         fileName: uniqueFilename,
         filePath: `/uploads/${uniqueFilename}`,
-        fileSize: file.size,
-        mimeType: file.type,
-        taskId: params.id,
+        fileSize: file.size,        mimeType: file.type,
+        taskId: id,
         uploaderId: session.user.id,
       },
       include: {
@@ -139,14 +140,12 @@ export async function POST(
           },
         },
       },
-    });
-
-    // Create activity log
+    });    // Create activity log
     await prisma.activity.create({
       data: {
         type: 'TASK_UPDATED',
         description: `Added attachment: ${file.name}`,
-        taskId: params.id,
+        taskId: id,
         userId: session.user.id,
         metadata: JSON.stringify({
           attachmentId: attachment.id,

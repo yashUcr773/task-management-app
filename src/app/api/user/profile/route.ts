@@ -36,12 +36,12 @@ export async function GET() {
         timezone: true,
         notifications: true,
         createdAt: true,
-        updatedAt: true,
+        updatedAt: true,        
         _count: {
           select: {
             assignedTasks: true,
-            createdTasks: true,
-            teamMemberships: true,
+            tasks: true,
+            teamMembers: true,
           }
         }
       }

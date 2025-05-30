@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -81,45 +81,12 @@ interface Sprint {
 interface CreateTaskDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   task?: any // For editing existing tasks
   onSave: (task: TaskFormValues) => void
 }
 
-// Mock data - replace with actual API calls
-const mockUsers: User[] = [
-  { id: "1", name: "John Doe", email: "john@example.com" },
-  { id: "2", name: "Jane Smith", email: "jane@example.com" },
-  { id: "3", name: "Bob Johnson", email: "bob@example.com" },
-]
-
-const mockEpics: Epic[] = [
-  { id: "1", title: "User Authentication", color: "#3b82f6" },
-  { id: "2", title: "Dashboard Features", color: "#10b981" },
-  { id: "3", title: "Task Management", color: "#f59e0b" },
-]
-
-const mockSprints: Sprint[] = [
-  { 
-    id: "1", 
-    name: "Sprint 1", 
-    startDate: new Date(2024, 0, 15), 
-    endDate: new Date(2024, 0, 29) 
-  },
-  { 
-    id: "2", 
-    name: "Sprint 2", 
-    startDate: new Date(2024, 0, 30), 
-    endDate: new Date(2024, 1, 13) 
-  },
-]
-
-const defaultTags = [
-  { name: "Frontend", color: "#3b82f6" },
-  { name: "Backend", color: "#10b981" },
-  { name: "Bug", color: "#ef4444" },
-  { name: "Feature", color: "#8b5cf6" },
-  { name: "Documentation", color: "#f59e0b" },
-]
+// Replace with actual API calls to fetch users, epics, sprints, and tags
 
 export function CreateTaskDialog({ open, onOpenChange, task, onSave }: CreateTaskDialogProps) {
   const [newTagName, setNewTagName] = useState("")
@@ -127,8 +94,53 @@ export function CreateTaskDialog({ open, onOpenChange, task, onSave }: CreateTas
     task?.tags || []
   )
   const [isLoading, setIsLoading] = useState(false)
+  const [users, setUsers] = useState<User[]>([])
+  const [epics, setEpics] = useState<Epic[]>([])
+  const [sprints, setSprints] = useState<Sprint[]>([])
+  const [defaultTags] = useState([
+    { name: "Frontend", color: "#3b82f6" },
+    { name: "Backend", color: "#10b981" },
+    { name: "Bug", color: "#ef4444" },
+    { name: "Feature", color: "#8b5cf6" },
+    { name: "Documentation", color: "#f59e0b" },
+  ])
   
   const isEditing = !!task
+
+  // Fetch real data from APIs
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch users
+        const usersResponse = await fetch('/api/user/list')
+        if (usersResponse.ok) {
+          const usersData = await usersResponse.json()
+          setUsers(usersData.users || [])
+        }
+
+        // Fetch epics
+        const epicsResponse = await fetch('/api/epics')
+        if (epicsResponse.ok) {
+          const epicsData = await epicsResponse.json()
+          setEpics(epicsData.epics || [])
+        }
+
+        // Fetch sprints
+        const sprintsResponse = await fetch('/api/sprints')
+        if (sprintsResponse.ok) {
+          const sprintsData = await sprintsResponse.json()
+          setSprints(sprintsData.sprints || [])
+        }
+      } catch (error) {
+        console.error('Failed to fetch dialog data:', error)
+        // Continue with empty arrays if API calls fail
+      }
+    }
+
+    if (open) {
+      fetchData()
+    }
+  }, [open])
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
@@ -145,12 +157,15 @@ export function CreateTaskDialog({ open, onOpenChange, task, onSave }: CreateTas
       tags: task?.tags || [],
     },
   })
-
   const onSubmit = async (values: TaskFormValues) => {
     setIsLoading(true)
     try {
       const taskData = {
         ...values,
+        // Convert special values back to null/undefined
+        assigneeId: values.assigneeId === "unassigned" ? undefined : values.assigneeId,
+        epicId: values.epicId === "no-epic" ? undefined : values.epicId,
+        sprintId: values.sprintId === "no-sprint" ? undefined : values.sprintId,
         tags: selectedTags,
         dueDate: values.dueDate?.toISOString(),
       }
@@ -393,21 +408,20 @@ export function CreateTaskDialog({ open, onOpenChange, task, onSave }: CreateTas
                       <SelectTrigger>
                         <SelectValue placeholder="Select assignee" />
                       </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="">
+                    </FormControl>                    <SelectContent>
+                      <SelectItem value="unassigned">
                         <div className="flex items-center">
                           <User className="mr-2 h-4 w-4 text-muted-foreground" />
                           Unassigned
                         </div>
                       </SelectItem>
-                      {mockUsers.map((user) => (
+                      {users.map((user: User) => (
                         <SelectItem key={user.id} value={user.id}>
                           <div className="flex items-center">
                             <Avatar className="mr-2 h-6 w-6">
                               <AvatarImage src={user.image || undefined} />
                               <AvatarFallback className="text-xs">
-                                {user.name.split(' ').map(n => n[0]).join('')}
+                                {user.name.split(' ').map((n: string) => n[0]).join('')}
                               </AvatarFallback>
                             </Avatar>
                             <span>{user.name}</span>
@@ -434,10 +448,9 @@ export function CreateTaskDialog({ open, onOpenChange, task, onSave }: CreateTas
                         <SelectTrigger>
                           <SelectValue placeholder="Select epic" />
                         </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="">No Epic</SelectItem>
-                        {mockEpics.map((epic) => (
+                      </FormControl>                      <SelectContent>
+                        <SelectItem value="no-epic">No Epic</SelectItem>
+                        {epics.map((epic: Epic) => (
                           <SelectItem key={epic.id} value={epic.id}>
                             <div className="flex items-center">
                               <div 
@@ -466,10 +479,9 @@ export function CreateTaskDialog({ open, onOpenChange, task, onSave }: CreateTas
                         <SelectTrigger>
                           <SelectValue placeholder="Select sprint" />
                         </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="">No Sprint</SelectItem>
-                        {mockSprints.map((sprint) => (
+                      </FormControl>                      <SelectContent>
+                        <SelectItem value="no-sprint">No Sprint</SelectItem>
+                        {sprints.map((sprint: Sprint) => (
                           <SelectItem key={sprint.id} value={sprint.id}>
                             <div>
                               <div className="font-medium">{sprint.name}</div>
@@ -531,7 +543,7 @@ export function CreateTaskDialog({ open, onOpenChange, task, onSave }: CreateTas
               <div className="space-y-2">
                 <FormDescription>Quick add from common tags:</FormDescription>
                 <div className="flex flex-wrap gap-2">
-                  {defaultTags.map((tag) => (
+                  {defaultTags.map((tag: { name: string; color: string }) => (
                     <button
                       key={tag.name}
                       type="button"

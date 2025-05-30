@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -31,7 +31,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Users, X, Plus, Building } from "lucide-react"
 import { toast } from "sonner"
@@ -61,11 +60,13 @@ interface Organization {
 interface CreateTeamDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   team?: any // For editing existing teams
   onSave: (team: TeamFormValues) => void
 }
 
 export function CreateTeamDialog({ open, onOpenChange, team, onSave }: CreateTeamDialogProps) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [selectedMembers, setSelectedMembers] = useState<User[]>(team?.members?.map((m: any) => m.user) || [])
   const [isLoading, setIsLoading] = useState(false)
   const [organizations, setOrganizations] = useState<Organization[]>([])
@@ -90,13 +91,7 @@ export function CreateTeamDialog({ open, onOpenChange, team, onSave }: CreateTea
     fetchOrganizations()
   }, [])
 
-  // Fetch users when organization changes
-  useEffect(() => {
-    const orgId = form.watch("organizationId")
-    if (orgId) {
-      fetchOrganizationUsers(orgId)
-    }
-  }, [form.watch("organizationId")])
+
 
   const fetchOrganizations = async () => {
     try {
@@ -110,12 +105,12 @@ export function CreateTeamDialog({ open, onOpenChange, team, onSave }: CreateTea
       setOrganizations(result.organizations)
     } catch (error) {
       console.error("Error fetching organizations:", error)
-      toast.error("Failed to load organizations")
-    } finally {
+      toast.error("Failed to load organizations")    } finally {
       setLoadingOrgs(false)
     }
   }
-  const fetchOrganizationUsers = async (organizationId: string) => {
+  
+  const fetchOrganizationUsers = useCallback(async (organizationId: string) => {
     setLoadingUsers(true)
     try {
       const response = await fetch(`/api/organizations/${organizationId}/members`)
@@ -133,7 +128,15 @@ export function CreateTeamDialog({ open, onOpenChange, team, onSave }: CreateTea
     } finally {
       setLoadingUsers(false)
     }
-  }
+  }, [])
+
+    // Fetch users when organization changes
+  useEffect(() => {
+    const orgId = form.watch("organizationId")
+    if (orgId) {
+      fetchOrganizationUsers(orgId)
+    }
+  }, [form, fetchOrganizationUsers])
 
   const onSubmit = async (values: TeamFormValues) => {
     setIsLoading(true)
@@ -222,7 +225,7 @@ export function CreateTeamDialog({ open, onOpenChange, team, onSave }: CreateTea
                     />
                   </FormControl>
                   <FormDescription>
-                    Optional description of the team's purpose and goals
+                    Optional description of the team&apos;s purpose and goals
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

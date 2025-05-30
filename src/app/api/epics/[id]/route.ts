@@ -10,9 +10,9 @@ const updateEpicSchema = z.object({
 })
 
 type RouteParams = {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
@@ -21,15 +21,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const { id } = params
+    }    const { id } = await params
 
     // Get user's organizations
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
-        organizationMembers: true
+        organizations: true
       }
     })
 
@@ -37,7 +35,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    const orgIds = user.organizationMembers.map(om => om.organizationId)
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    const orgIds = user.organizations.map((om: any) => om.organizationId)
 
     // Get epic with access control
     const epic = await prisma.epic.findFirst({
@@ -93,9 +92,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const { id } = params
+    }    const { id } = await params
     const body = await request.json()
     const validatedData = updateEpicSchema.parse(body)
 
@@ -103,15 +100,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
-        organizationMembers: true
+        organizations: true
       }
     })
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
-
-    const orgIds = user.organizationMembers.map(om => om.organizationId)
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    const orgIds = user.organizations.map((om: any) => om.organizationId)
 
     // Check if epic exists and user has access
     const existingEpic = await prisma.epic.findFirst({
@@ -166,13 +163,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { id } = params
-
-    // Get user's organizations
+    const { id } = await params    // Get user's organizations
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
-        organizationMembers: true
+        organizations: true
       }
     })
 
@@ -180,7 +175,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    const orgIds = user.organizationMembers.map(om => om.organizationId)
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    const orgIds = user.organizations.map((om: any) => om.organizationId)
 
     // Check if epic exists and user has access
     const existingEpic = await prisma.epic.findFirst({

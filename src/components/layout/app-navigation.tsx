@@ -17,11 +17,9 @@ import { signOut } from "next-auth/react"
 import { 
   LayoutDashboard, 
   CheckSquare, 
-  Calendar, 
-  Users, 
+  Calendar,   Users, 
   Settings,
   Plus,
-  Bell,
   Target,
   Timer
 } from "lucide-react"

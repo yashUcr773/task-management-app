@@ -44,23 +44,27 @@ export async function POST(request: NextRequest) {
         { error: "User not found" },
         { status: 404 }
       )
-    }
-
-    // For now, we'll use the user's first organization
-    // TODO: Support multiple organizations and team selection
-    const userOrg = await prisma.organizationMember.findFirst({
+    }    // For now, we'll use the user's first organization's first team
+    // TODO: Support team selection in the UI
+    const userOrg = await prisma.userOrganization.findFirst({
       where: { userId: user.id },
-      include: { organization: true }
+      include: { 
+        organization: {
+          include: {
+            teams: true
+          }
+        }
+      }
     })
 
-    if (!userOrg) {
+    if (!userOrg || !userOrg.organization.teams.length) {
       return NextResponse.json(
-        { error: "User not part of any organization" },
+        { error: "User not part of any organization with teams" },
         { status: 400 }
       )
     }
 
-    // Create the task
+    const defaultTeam = userOrg.organization.teams[0]    // Create the task
     const task = await prisma.task.create({
       data: {
         title: validatedData.title,
@@ -70,13 +74,12 @@ export async function POST(request: NextRequest) {
         storyPoints: validatedData.storyPoints,
         dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : null,
         assigneeId: validatedData.assigneeId || null,
-        reporterId: user.id,
-        organizationId: userOrg.organizationId,
+        creatorId: user.id,
+        teamId: defaultTeam.id,
         epicId: validatedData.epicId || null,
         sprintId: validatedData.sprintId || null,
         // tags will be handled separately due to many-to-many relationship
-      },
-      include: {
+      },      include: {
         assignee: {
           select: {
             id: true,
@@ -85,7 +88,7 @@ export async function POST(request: NextRequest) {
             image: true
           }
         },
-        reporter: {
+        creator: {
           select: {
             id: true,
             name: true,
@@ -95,47 +98,44 @@ export async function POST(request: NextRequest) {
         },
         epic: true,
         sprint: true,
-        organization: true
+        team: {
+          include: {
+            organization: true
+          }
+        }
       }
-    })
-
-    // Handle tags if provided
+    })    // Handle tags if provided
     if (validatedData.tags && validatedData.tags.length > 0) {
       // Create tags that don't exist and get all tag IDs
       const tagOperations = validatedData.tags.map(async (tag) => {
         return prisma.tag.upsert({
           where: {
-            name_organizationId: {
-              name: tag.name,
-              organizationId: userOrg.organizationId
-            }
+            name: tag.name
           },
           update: {},
           create: {
             name: tag.name,
-            color: tag.color,
-            organizationId: userOrg.organizationId
+            color: tag.color
           }
         })
       })
 
       const tags = await Promise.all(tagOperations)
 
-      // Connect tags to task
-      await prisma.task.update({
-        where: { id: task.id },
-        data: {
-          tags: {
-            connect: tags.map(tag => ({ id: tag.id }))
-          }
-        }
-      })
-    }
+      // Connect tags to task using TaskTag join table
+      const taskTagConnections = tags.map(tag => ({
+        taskId: task.id,
+        tagId: tag.id
+      }))
 
-    // Create activity log
+      await prisma.taskTag.createMany({
+        data: taskTagConnections
+      })
+    }    // Create activity log
     await prisma.activity.create({
       data: {
         type: "TASK_CREATED",
+        description: `Created task: ${task.title}`,
         taskId: task.id,
         userId: user.id,
         metadata: JSON.stringify({
@@ -144,9 +144,7 @@ export async function POST(request: NextRequest) {
           priority: task.priority
         })
       }
-    })
-
-    // Fetch the complete task with all relations
+    })    // Fetch the complete task with all relations
     const completeTask = await prisma.task.findUnique({
       where: { id: task.id },
       include: {
@@ -158,7 +156,7 @@ export async function POST(request: NextRequest) {
             image: true
           }
         },
-        reporter: {
+        creator: {
           select: {
             id: true,
             name: true,
@@ -168,8 +166,16 @@ export async function POST(request: NextRequest) {
         },
         epic: true,
         sprint: true,
-        tags: true,
-        organization: true
+        tags: {
+          include: {
+            tag: true
+          }
+        },
+        team: {
+          include: {
+            organization: true
+          }
+        }
       }
     })
 
@@ -226,15 +232,13 @@ export async function GET(request: NextRequest) {
         { error: "User not found" },
         { status: 404 }
       )
-    }
-
-    // Get user's organizations
-    const userOrgs = await prisma.organizationMember.findMany({
+    }    // Get user's organizations
+    const userOrgs = await prisma.userOrganization.findMany({
       where: { userId: user.id },
       select: { organizationId: true }
     })
 
-    const orgIds = userOrgs.map(org => org.organizationId)
+    const orgIds = userOrgs.map((org: { organizationId: string }) => org.organizationId)
 
     if (orgIds.length === 0) {
       return NextResponse.json({
@@ -248,8 +252,10 @@ export async function GET(request: NextRequest) {
       })
     }    // Build filters
     const where: Record<string, unknown> = {
-      organizationId: {
-        in: orgIds
+      team: {
+        organizationId: {
+          in: orgIds
+        }
       }
     }
 
@@ -281,9 +287,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get total count
-    const total = await prisma.task.count({ where })
-
-    // Get tasks with pagination
+    const total = await prisma.task.count({ where })    // Get tasks with pagination
     const tasks = await prisma.task.findMany({
       where,
       include: {
@@ -295,7 +299,7 @@ export async function GET(request: NextRequest) {
             image: true
           }
         },
-        reporter: {
+        creator: {
           select: {
             id: true,
             name: true,
@@ -305,8 +309,16 @@ export async function GET(request: NextRequest) {
         },
         epic: true,
         sprint: true,
-        tags: true,
-        organization: true,
+        tags: {
+          include: {
+            tag: true
+          }
+        },
+        team: {
+          include: {
+            organization: true
+          }
+        },
         _count: {
           select: {
             comments: true,

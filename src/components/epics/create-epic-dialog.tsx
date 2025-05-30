@@ -116,12 +116,11 @@ export function CreateEpicDialog({ open, onOpenChange, epic, onSave }: CreateEpi
       setLoadingOrgs(false)
     }
   }
-
   const onSubmit = async (data: EpicFormValues) => {
     setIsLoading(true)
     try {
       await onSave(data)
-    } catch (error) {
+    } catch {
       // Error handling is done in the parent component
     } finally {
       setIsLoading(false)

@@ -69,6 +69,7 @@ const timezones = [
 ]
 
 export function ProfileView() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { session } = useAuth()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -85,13 +86,13 @@ export function ProfileView() {
         email: true,
         push: true,
         mentions: true,
-        updates: false,
-      },
+        updates: false,      },
     },
   })
 
   useEffect(() => {
     fetchProfile()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchProfile = async () => {

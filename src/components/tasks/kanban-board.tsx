@@ -2,62 +2,13 @@
 
 import React, { useState } from "react"
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { KanbanColumn } from "./kanban-column"
 import { TaskCard } from "./task-card"
 import { TaskStatus } from "@prisma/client"
 
-// Mock data - will be replaced with real API calls
-const mockTasks = [
-  {
-    id: "1",
-    title: "Implement user authentication",
-    description: "Set up NextAuth.js with Prisma adapter",
-    status: "TODO" as TaskStatus,
-    priority: "HIGH" as const,
-    storyPoints: 8,
-    dueDate: new Date("2025-06-01"),
-    assignee: { name: "John Doe", email: "john@example.com", image: null },
-    tags: [{ name: "Backend", color: "#3B82F6" }, { name: "Security", color: "#EF4444" }]
-  },
-  {
-    id: "2", 
-    title: "Design landing page",
-    description: "Create responsive landing page with hero section",
-    status: "IN_DEV" as TaskStatus,
-    priority: "MEDIUM" as const,
-    storyPoints: 5,
-    dueDate: new Date("2025-05-30"),
-    assignee: { name: "Jane Smith", email: "jane@example.com", image: null },
-    tags: [{ name: "Frontend", color: "#10B981" }, { name: "Design", color: "#8B5CF6" }]
-  },
-  {
-    id: "3",
-    title: "Update API documentation", 
-    description: "Document all REST endpoints with examples",
-    status: "WITH_QA" as TaskStatus,
-    priority: "LOW" as const,
-    storyPoints: 3,
-    dueDate: new Date("2025-06-03"),
-    assignee: { name: "Mike Johnson", email: "mike@example.com", image: null },
-    tags: [{ name: "Documentation", color: "#F59E0B" }]
-  },
-  {
-    id: "4",
-    title: "Setup CI/CD pipeline",
-    description: "Configure GitHub Actions for automated testing and deployment",
-    status: "READY" as TaskStatus,
-    priority: "HIGH" as const,
-    storyPoints: 13,
-    dueDate: new Date("2025-06-05"),
-    assignee: { name: "Sarah Wilson", email: "sarah@example.com", image: null },
-    tags: [{ name: "DevOps", color: "#06B6D4" }]
-  }
-]
+// TODO: Replace with real API calls to fetch tasks
 
 const columns = [
   { id: "PICKED", title: "Picked", color: "bg-blue-50 border-blue-200" },
@@ -70,15 +21,17 @@ const columns = [
 ]
 
 interface KanbanBoardProps {
-  searchQuery: string
+  searchQuery: string  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onTaskClick?: (task: any) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tasks?: any[]
   isLoading?: boolean
 }
 
 export function KanbanBoard({ searchQuery, onTaskClick, tasks: externalTasks, isLoading }: KanbanBoardProps) {
-  const [tasks, setTasks] = useState(externalTasks || mockTasks)
-  const [activeTask, setActiveTask] = useState<typeof mockTasks[0] | null>(null)
+  const [tasks, setTasks] = useState(externalTasks || [])
+  const [activeTask, setActiveTask] = useState<any | null>(null)
   // Update tasks when external tasks change
   React.useEffect(() => {
     if (externalTasks) {
@@ -93,8 +46,7 @@ export function KanbanBoard({ searchQuery, onTaskClick, tasks: externalTasks, is
       },
     })
   )
-
-  const filteredTasks = tasks.filter(task => 
+  const filteredTasks = tasks.filter((task: any) => 
     task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     task.assignee?.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -113,7 +65,7 @@ export function KanbanBoard({ searchQuery, onTaskClick, tasks: externalTasks, is
     const taskId = active.id as string
     const newStatus = over.id as TaskStatus
 
-    setTasks(prev => prev.map(task => 
+    setTasks((prev: any) => prev.map((task: any) => 
       task.id === taskId 
         ? { ...task, status: newStatus }
         : task
@@ -122,7 +74,7 @@ export function KanbanBoard({ searchQuery, onTaskClick, tasks: externalTasks, is
     setActiveTask(null)
   }
   const getTasksByStatus = (status: string) => {
-    return filteredTasks.filter(task => task.status === status)
+    return filteredTasks.filter((task: any) => task.status === status)
   }
 
   if (isLoading) {

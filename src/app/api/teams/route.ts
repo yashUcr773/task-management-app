@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has admin access to the organization
-    const orgMember = await prisma.organizationMember.findFirst({
+    const orgMember = await prisma.userOrganization.findFirst({
       where: {
         userId: user.id,
         organizationId: validatedData.organizationId,
@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
 
     if (organizationId) {
       // Check if user has access to the organization
-      const orgMember = await prisma.organizationMember.findFirst({
+      const orgMember = await prisma.userOrganization.findFirst({
         where: {
           userId: user.id,
           organizationId
@@ -164,15 +164,14 @@ export async function GET(request: NextRequest) {
       where.organizationId = organizationId
     } else {
       // Get teams from all user's organizations
-      const userOrgs = await prisma.organizationMember.findMany({
+      const userOrgs = await prisma.userOrganization.findMany({
         where: { userId: user.id },
         select: { organizationId: true }
       })
 
       const orgIds = userOrgs.map(org => org.organizationId)
       where.organizationId = { in: orgIds }
-    }
-
+    }    
     // Get teams where user is a member or has access through organization
     const teams = await prisma.team.findMany({
       where: {
@@ -187,7 +186,7 @@ export async function GET(request: NextRequest) {
           },
           {
             organization: {
-              members: {
+              users: {
                 some: {
                   userId: user.id,
                   role: "ADMIN"

@@ -11,7 +11,7 @@ const createCommentSchema = z.object({
 // GET /api/tasks/[id]/comments - Get task comments
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -27,9 +27,9 @@ export async function GET(
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    // Get the task first to check access
+    const { id } = await params    // Get the task first to check access
     const task = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         team: {
           include: {
@@ -53,10 +53,9 @@ export async function GET(
 
     if (!hasAccess) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-
+    }    
     const comments = await prisma.comment.findMany({
-      where: { taskId: params.id },
+      where: { taskId: id },
       include: {
         user: {
           select: {
@@ -83,9 +82,10 @@ export async function GET(
 // POST /api/tasks/[id]/comments - Create comment
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -100,11 +100,9 @@ export async function POST(
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
-    }
-
-    // Get the task first to check access
+    }    // Get the task first to check access
     const task = await prisma.task.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         team: {
           include: {
@@ -128,13 +126,11 @@ export async function POST(
 
     if (!hasAccess) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-
-    // Create the comment
+    }    // Create the comment
     const comment = await prisma.comment.create({
       data: {
         content: validatedData.content,
-        taskId: params.id,
+        taskId: id,
         userId: user.id,
       },
       include: {
@@ -151,11 +147,10 @@ export async function POST(
 
     // Create activity log
     try {
-      await prisma.activity.create({
-        data: {
+      await prisma.activity.create({        data: {
           type: "COMMENT_ADDED",
           description: `${user.name || user.email} added a comment to "${task.title}"`,
-          taskId: params.id,
+          taskId: id,
           userId: user.id,
           metadata: JSON.stringify({
             comment: validatedData.content.substring(0, 100) + (validatedData.content.length > 100 ? "..." : "")

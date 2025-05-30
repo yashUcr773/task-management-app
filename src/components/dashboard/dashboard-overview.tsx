@@ -16,47 +16,19 @@ import {
 import Link from "next/link"
 
 export function DashboardOverview() {
-  // Mock data - this will be replaced with real data from API
+  // TODO: Replace with real data from API
   const stats = {
-    totalTasks: 42,
-    inProgress: 8,
-    overdue: 3,
-    completed: 31,
-    teamMembers: 12
+    totalTasks: 0,
+    inProgress: 0,
+    overdue: 0,
+    completed: 0,
+    teamMembers: 0
   }
 
-  const recentTasks = [
-    {
-      id: 1,
-      title: "Implement user authentication",
-      status: "IN_DEV",
-      priority: "HIGH",
-      assignee: "John Doe",
-      dueDate: "2025-06-01"
-    },
-    {
-      id: 2,
-      title: "Design landing page mockups",
-      status: "WITH_QA",
-      priority: "MEDIUM",
-      assignee: "Jane Smith",
-      dueDate: "2025-05-30"
-    },
-    {
-      id: 3,
-      title: "Update API documentation",
-      status: "TODO",
-      priority: "LOW",
-      assignee: "Mike Johnson",
-      dueDate: "2025-06-03"
-    }
-  ]
-
-  const upcomingDeadlines = [
-    { title: "Project Alpha Release", date: "2025-06-01", type: "Release" },
-    { title: "Sprint Review", date: "2025-05-31", type: "Meeting" },
-    { title: "Client Presentation", date: "2025-06-02", type: "Presentation" }
-  ]
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recentTasks: any[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const upcomingDeadlines: any[] = []
 
   return (
     <div className="space-y-6">

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { CreateSprintDialog } from "./create-sprint-dialog"
 import { 
@@ -74,7 +74,7 @@ export function SprintsView() {
     }
   }
 
-  const handleCreateSprint = async (sprintData: any) => {
+  const handleCreateSprint = async (sprintData: Record<string, unknown>) => {
     try {
       const response = await fetch('/api/sprints', {
         method: 'POST',
@@ -99,7 +99,7 @@ export function SprintsView() {
     }
   }
 
-  const handleEditSprint = async (id: string, sprintData: any) => {
+  const handleEditSprint = async (id: string, sprintData: Record<string, unknown>) => {
     try {
       const response = await fetch(`/api/sprints/${id}`, {
         method: 'PUT',
@@ -176,6 +176,7 @@ export function SprintsView() {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const isSprintActive = (sprint: Sprint): boolean => {
     const now = new Date()
     const startDate = new Date(sprint.startDate)
@@ -183,7 +184,7 @@ export function SprintsView() {
     return now >= startDate && now <= endDate
   }
 
-  const getSprintStatus = (sprint: Sprint): { label: string; variant: any } => {
+  const getSprintStatus = (sprint: Sprint): { label: string; variant: "default" | "secondary" | "outline" | "destructive" } => {
     const now = new Date()
     const startDate = new Date(sprint.startDate)
     const endDate = new Date(sprint.endDate)
@@ -234,9 +235,8 @@ export function SprintsView() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No sprints found</h3>
-            <p className="text-muted-foreground text-center mb-4">
-              Get started by creating your first sprint to organize your team's work
+            <h3 className="text-lg font-semibold mb-2">No sprints found</h3>            <p className="text-muted-foreground text-center mb-4">
+              Get started by creating your first sprint to organize your team&apos;s work
             </p>
             <Button onClick={() => setCreateDialogOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -342,9 +342,8 @@ export function SprintsView() {
             setEditingSprint(null)
           }
         }}
-        sprint={editingSprint}
-        onSave={editingSprint ? 
-          (data: any) => handleEditSprint(editingSprint.id, data) : 
+        sprint={editingSprint}        onSave={editingSprint ? 
+          (data: Record<string, unknown>) => handleEditSprint(editingSprint.id, data) : 
           handleCreateSprint
         }
       />

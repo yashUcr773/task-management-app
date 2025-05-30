@@ -60,6 +60,7 @@ export function useWebSocket(organizationId?: string) {
 }
 
 // Specific hooks for different features
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function useTaskUpdates(onTaskUpdate?: (task: any) => void) {
   const { subscribe } = useWebSocket()
 
@@ -86,6 +87,7 @@ export function useTaskUpdates(onTaskUpdate?: (task: any) => void) {
   }, [subscribe, onTaskUpdate])
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function useCommentUpdates(taskId: string, onCommentUpdate?: (comment: any) => void) {
   const { subscribe } = useWebSocket()
 
@@ -102,6 +104,7 @@ export function useCommentUpdates(taskId: string, onCommentUpdate?: (comment: an
   }, [subscribe, taskId, onCommentUpdate])
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function useNotificationUpdates(onNotificationUpdate?: (notification: any) => void) {
   const { subscribe } = useWebSocket()
 

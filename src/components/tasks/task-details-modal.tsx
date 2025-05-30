@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -8,13 +8,11 @@ import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { 
   Calendar,
-  Clock,
   User,
   Users,
   Tag,
   Target,
   Timer,
-  ExternalLink,
   Edit,
   MoreHorizontal
 } from "lucide-react"
@@ -115,19 +113,13 @@ export function TaskDetailsModal({
   taskId, 
   open, 
   onOpenChange, 
-  onTaskUpdate 
 }: TaskDetailsModalProps) {
   const [task, setTask] = useState<TaskDetails | null>(null)
   const [loading, setLoading] = useState(false)
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [currentUserId, setCurrentUserId] = useState<string | undefined>()
 
-  useEffect(() => {
-    if (open && taskId) {
-      fetchTaskDetails()
-    }
-  }, [open, taskId])
-  const fetchTaskDetails = async () => {
+  const fetchTaskDetails = useCallback(async () => {
     if (!taskId) return
 
     try {
@@ -166,7 +158,14 @@ export function TaskDetailsModal({
     } finally {
       setLoading(false)
     }
-  }
+  }, [taskId])
+
+  useEffect(() => {
+    if (open && taskId) {
+      fetchTaskDetails()
+    }
+  }, [open, taskId, fetchTaskDetails])
+
 
   const formatStatus = (status: string) => {
     return status.replace(/_/g, " ").toLowerCase().replace(/\\b\\w/g, l => l.toUpperCase())

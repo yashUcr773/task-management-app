@@ -5,6 +5,7 @@ import { toast } from "sonner"
 
 export interface WebSocketMessage {
   type: 'task_updated' | 'task_created' | 'task_deleted' | 'comment_added' | 'notification_created' | 'user_joined' | 'user_left'
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   payload: any
   userId?: string
   organizationId?: string

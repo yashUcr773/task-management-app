@@ -6,7 +6,7 @@ const prisma = new PrismaClient()
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession()
@@ -15,25 +15,23 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const organizationId = params.id
-
-    // Verify user has access to this organization
+    const { id: organizationId } = await params    // Verify user has access to this organization
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
-        organizationMembers: {
+        organizations: {
           where: { organizationId },
           include: { organization: true }
         }
       }
     })
 
-    if (!user || user.organizationMembers.length === 0) {
+    if (!user || user.organizations.length === 0) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
     // Get all members of the organization
-    const members = await prisma.organizationMember.findMany({
+    const members = await prisma.userOrganization.findMany({
       where: { organizationId },
       include: {
         user: {
@@ -45,15 +43,16 @@ export async function GET(
           }
         }
       }
-    })
+    })    
 
-    const formattedMembers = members.map(member => ({
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+    const formattedMembers = members.map((member: any) => ({
       id: member.user.id,
       name: member.user.name,
       email: member.user.email,
       image: member.user.image,
       role: member.role,
-      joinedAt: member.createdAt
+      joinedAt: member.joinedAt
     }))
 
     return NextResponse.json(formattedMembers)

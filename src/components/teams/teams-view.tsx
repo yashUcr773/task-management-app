@@ -73,7 +73,7 @@ export function TeamsView() {
       setIsLoading(false)
     }
   }
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
   const handleTeamSave = (teamData: any) => {
     fetchTeams() // Refresh the teams list
   }

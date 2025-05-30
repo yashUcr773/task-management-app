@@ -16,66 +16,17 @@ import { MoreHorizontal, Calendar, MessageSquare, Paperclip } from "lucide-react
 import { formatDistanceToNow } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
 
-// Same mock data as other components
-const mockTasks = [
-  {
-    id: "1",
-    title: "Implement user authentication",
-    description: "Set up NextAuth.js with Prisma adapter",
-    status: "TODO",
-    priority: "HIGH" as const,
-    storyPoints: 8,
-    dueDate: new Date("2025-06-01"),
-    assignee: { name: "John Doe", email: "john@example.com", image: null },
-    tags: [{ name: "Backend", color: "#3B82F6" }, { name: "Security", color: "#EF4444" }],
-    createdAt: new Date("2025-05-20")
-  },
-  {
-    id: "2", 
-    title: "Design landing page",
-    description: "Create responsive landing page with hero section",
-    status: "IN_DEV",
-    priority: "MEDIUM" as const,
-    storyPoints: 5,
-    dueDate: new Date("2025-05-30"),
-    assignee: { name: "Jane Smith", email: "jane@example.com", image: null },
-    tags: [{ name: "Frontend", color: "#10B981" }, { name: "Design", color: "#8B5CF6" }],
-    createdAt: new Date("2025-05-18")
-  },
-  {
-    id: "3",
-    title: "Update API documentation", 
-    description: "Document all REST endpoints with examples",
-    status: "WITH_QA",
-    priority: "LOW" as const,
-    storyPoints: 3,
-    dueDate: new Date("2025-06-03"),
-    assignee: { name: "Mike Johnson", email: "mike@example.com", image: null },
-    tags: [{ name: "Documentation", color: "#F59E0B" }],
-    createdAt: new Date("2025-05-15")
-  },
-  {
-    id: "4",
-    title: "Setup CI/CD pipeline",
-    description: "Configure GitHub Actions for automated testing and deployment",
-    status: "READY",
-    priority: "HIGH" as const,
-    storyPoints: 13,
-    dueDate: new Date("2025-06-05"),
-    assignee: { name: "Sarah Wilson", email: "sarah@example.com", image: null },
-    tags: [{ name: "DevOps", color: "#06B6D4" }],
-    createdAt: new Date("2025-05-22")
-  }
-]
+// TODO: Replace with real API calls to fetch tasks
 
 interface TasksListProps {
   searchQuery: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tasks?: any[]
   isLoading?: boolean
 }
 
 export function TasksList({ searchQuery, tasks: externalTasks, isLoading }: TasksListProps) {
-  const [tasks, setTasks] = useState(externalTasks || mockTasks)
+  const [tasks, setTasks] = useState(externalTasks || [])
   const [selectedTasks, setSelectedTasks] = useState<string[]>([])
 
   // Update tasks when external tasks change
@@ -85,7 +36,7 @@ export function TasksList({ searchQuery, tasks: externalTasks, isLoading }: Task
     }
   }, [externalTasks])
 
-  const filteredTasks = tasks.filter(task => 
+  const filteredTasks = tasks.filter((task: any) => 
     task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     task.assignee?.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -175,9 +126,8 @@ export function TasksList({ searchQuery, tasks: externalTasks, isLoading }: Task
                 </div>
               </CardContent>
             </Card>
-          ))
-        ) : (
-          filteredTasks.map((task) => (
+          ))        ) : (
+          filteredTasks.map((task: any) => (
           <Card key={task.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-4">
               <div className="flex items-start space-x-4">
@@ -225,6 +175,7 @@ export function TasksList({ searchQuery, tasks: externalTasks, isLoading }: Task
 
                   {task.tags && task.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                       {task.tags.map((tag: any, index: number) => (
                         <Badge 
                           key={index} 

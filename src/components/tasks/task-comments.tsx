@@ -38,9 +38,10 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
   const [newComment, setNewComment] = useState("")
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-
+  
   useEffect(() => {
     fetchComments()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskId])
 
   const fetchComments = async () => {
@@ -100,6 +101,7 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       handleSubmit(e as any)
     }
   }

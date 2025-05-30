@@ -7,10 +7,6 @@ import { z } from "zod"
 const createOrganizationSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().optional(),
-  settings: z.object({
-    allowPublicRegistration: z.boolean().optional(),
-    defaultRole: z.enum(["ADMIN", "USER", "VIEWER"]).optional(),
-  }).optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -37,15 +33,12 @@ export async function POST(request: NextRequest) {
         { error: "User not found" },
         { status: 404 }
       )
-    }
-
-    // Create the organization
+    }    // Create the organization
     const organization = await prisma.organization.create({
       data: {
         name: validatedData.name,
         description: validatedData.description,
-        settings: validatedData.settings ? JSON.stringify(validatedData.settings) : null,
-        members: {
+        users: {
           create: {
             userId: user.id,
             role: "ADMIN" // Creator is always admin
@@ -53,7 +46,7 @@ export async function POST(request: NextRequest) {
         }
       },
       include: {
-        members: {
+        users: {
           include: {
             user: {
               select: {
@@ -68,7 +61,7 @@ export async function POST(request: NextRequest) {
         _count: {
           select: {
             teams: true,
-            tasks: true
+            epics: true
           }
         }
       }
@@ -117,19 +110,17 @@ export async function GET() {
         { error: "User not found" },
         { status: 404 }
       )
-    }
-
-    // Get user's organizations
+    }    // Get user's organizations
     const organizations = await prisma.organization.findMany({
       where: {
-        members: {
+        users: {
           some: {
             userId: user.id
           }
         }
       },
       include: {
-        members: {
+        users: {
           include: {
             user: {
               select: {
@@ -152,9 +143,7 @@ export async function GET() {
         },
         _count: {
           select: {
-            tasks: true,
-            epics: true,
-            sprints: true
+            epics: true
           }
         }
       },

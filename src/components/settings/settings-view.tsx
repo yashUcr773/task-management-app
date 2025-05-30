@@ -7,13 +7,11 @@ import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { 
   Settings, 
   User, 
-  Bell, 
   Shield, 
   Palette, 
   Database,
@@ -67,7 +65,7 @@ export function SettingsView() {
 
   const [loading, setLoading] = useState(false)
 
-  const updateSettings = (category: keyof SettingsState, key: string, value: any) => {
+  const updateSettings = (category: keyof SettingsState, key: string, value: unknown) => {
     setSettings(prev => ({
       ...prev,
       [category]: {
@@ -76,14 +74,13 @@ export function SettingsView() {
       }
     }))
   }
-
   const handleSaveSettings = async () => {
     setLoading(true)
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000))
       toast.success("Settings saved successfully")
-    } catch (error) {
+    } catch {
       toast.error("Failed to save settings")
     } finally {
       setLoading(false)
@@ -108,9 +105,8 @@ export function SettingsView() {
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
-      
-      toast.success("Data exported successfully")
-    } catch (error) {
+        toast.success("Data exported successfully")
+    } catch {
       toast.error("Failed to export data")
     }
   }

@@ -139,12 +139,11 @@ export function CreateSprintDialog({ open, onOpenChange, sprint, onSave }: Creat
       setLoadingTeams(false)
     }
   }
-
   const onSubmit = async (data: SprintFormValues) => {
     setIsLoading(true)
     try {
       await onSave(data)
-    } catch (error) {
+    } catch {
       // Error handling is done in the parent component
     } finally {
       setIsLoading(false)
@@ -180,9 +179,8 @@ export function CreateSprintDialog({ open, onOpenChange, sprint, onSave }: Creat
                       placeholder="Enter sprint name..." 
                       {...field} 
                     />
-                  </FormControl>
-                  <FormDescription>
-                    e.g., "Sprint 1", "Feature Development Sprint", "Bug Fix Sprint"
+                  </FormControl>                  <FormDescription>
+                    e.g., &quot;Sprint 1&quot;, &quot;Feature Development Sprint&quot;, &quot;Bug Fix Sprint&quot;
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
