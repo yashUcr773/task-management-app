@@ -1,13 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { KanbanBoard } from "@/components/tasks/kanban-board"
 import { TasksTable } from "@/components/tasks/tasks-table"
 import { TasksList } from "@/components/tasks/tasks-list"
-import {TasksCalendar} from "@/components/tasks/tasks-calendar"
 import { TaskDialog } from "@/components/tasks/task-dialog"
 import { TaskDetailsModal } from "@/components/tasks/task-details-modal"
 import { useRealTimeTasks } from "@/hooks/use-real-time-tasks"
@@ -20,7 +20,6 @@ import {
   LayoutGrid,
   Table,
   List,
-  Calendar,
   Wifi,
   WifiOff,
   RefreshCw,
@@ -30,11 +29,28 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 
 export function TasksView() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  
   const [createTaskOpen, setCreateTaskOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [taskDetailsOpen, setTaskDetailsOpen] = useState(false)
-    // Real-time tasks hook with WebSocket integration
+  const [showArchived, setShowArchived] = useState(false)
+  
+  // URL parameter filtering
+  const statusFilter = searchParams?.get('status')
+  const filterParam = searchParams?.get('filter')
+  const taskIdParam = searchParams?.get('id')
+  
+  // Determine real-time hook options based on URL parameters
+  const hookOptions = {
+    organizationId: 'org1', // This would come from context/props
+    enableRealTime: true,
+    showToasts: true,
+    showArchived,
+    ...(statusFilter && { status: [statusFilter] })
+  }    // Real-time tasks hook with WebSocket integration
   const {
     tasks,
     isLoading,
@@ -45,24 +61,49 @@ export function TasksView() {
     overdueTasks,
     refreshTasks,
     lastUpdate,
-    isRealTimeEnabled
-  } = useRealTimeTasks({
-    organizationId: 'org1', // This would come from context/props
-    enableRealTime: true,
-    showToasts: true
-  })
+    isRealTimeEnabled  } = useRealTimeTasks(hookOptions)
+  
   // WebSocket connection status
   const { isConnected } = useWebSocket()
-    const handleTaskSave = async () => {
+  
+  // Handle URL parameters for task filtering and navigation
+  useEffect(() => {
+    if (taskIdParam) {
+      setSelectedTaskId(taskIdParam)
+      setTaskDetailsOpen(true)
+    }
+  }, [taskIdParam])
+  
+  // Filter tasks based on URL parameters and search query
+  const getFilteredTasks = () => {
+    let filtered = tasks.filter((task: TasksWithUsersAndTags) =>
+      task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.assignee?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    
+    // Apply overdue filter if specified
+    if (filterParam === 'overdue') {
+      const now = new Date()
+      filtered = filtered.filter((task: TasksWithUsersAndTags) => 
+        task.dueDate && new Date(task.dueDate) < now && task.status !== 'RELEASED'
+      )
+    }
+    
+    return filtered
+  }
+  
+  const filteredTasks = getFilteredTasks()
+  const handleTaskSave = async () => {
     try {
-      // Refresh tasks to show the new one
+      // For create mode, just refresh tasks since TaskDialog already created the task
+      // Real-time hook will handle automatic updates, but refresh ensures consistency
       refreshTasks()
     } catch (error) {
-      console.error('Failed to save task:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to create task')
+      console.error('Failed to refresh tasks:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to refresh tasks')
     }
   }
-
   const handleTaskClick = (task: TasksWithUsersAndTags) => {
     setSelectedTaskId(task.id)
     setTaskDetailsOpen(true)
@@ -70,22 +111,29 @@ export function TasksView() {
 
   const handleRefresh = () => {
     refreshTasks()
-    toast.info('Refreshing tasks...')  }
-  // Filter tasks based on search query
-  const filteredTasks = tasks.filter((task: TasksWithUsersAndTags) =>
-    task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    task.assignee?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+    toast.info('Refreshing tasks...')  
+  }
+  
+  const clearFilters = () => {
+    router.push('/tasks')
+  }
+  
+  const hasActiveFilters = statusFilter || filterParam
+  
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">        <div className="flex items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Tasks</h1>
             <p className="text-muted-foreground">
               Manage and track your tasks across projects
+              {hasActiveFilters && (
+                <span className="ml-2 text-blue-600">
+                  • Filtered{statusFilter && ` by ${statusFilter.replace('_', ' ')}`}
+                  {filterParam && ` (${filterParam})`}
+                </span>
+              )}
             </p>
           </div>
         </div>
@@ -102,10 +150,23 @@ export function TasksView() {
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 w-64"
             />
-          </div>
-          <Button variant="outline" size="sm">
+          </div>          <Button variant="outline" size="sm">
             <Filter className="mr-2 h-4 w-4" />
             Filter
+          </Button>
+          
+          {hasActiveFilters && (
+            <Button variant="outline" size="sm" onClick={clearFilters}>
+              Clear Filters
+            </Button>
+          )}
+          
+          <Button 
+            variant={showArchived ? "default" : "outline"} 
+            size="sm"
+            onClick={() => setShowArchived(!showArchived)}
+          >
+            {showArchived ? "Hide Archived" : "Show Archived"}
           </Button>
           
           {/* Real-time connection status and controls */}

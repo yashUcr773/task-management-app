@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { VisuallyHidden } from "@/components/ui/visually-hidden"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -178,11 +179,15 @@ export function TaskDetailsModal({
   if (!open || !taskId) {
     return null
   }
-
   if (loading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <VisuallyHidden>
+              <DialogTitle>Loading Task Details</DialogTitle>
+            </VisuallyHidden>
+          </DialogHeader>
           <div className="flex items-center justify-center py-8">
             <div className="text-sm text-muted-foreground">Loading task details...</div>
           </div>
@@ -190,11 +195,15 @@ export function TaskDetailsModal({
       </Dialog>
     )
   }
-
   if (!task) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <VisuallyHidden>
+              <DialogTitle>Task Not Found</DialogTitle>
+            </VisuallyHidden>
+          </DialogHeader>
           <div className="flex items-center justify-center py-8">
             <div className="text-sm text-muted-foreground">Task not found</div>
           </div>
@@ -222,8 +231,6 @@ export function TaskDetailsModal({
             </div>
           </div>
           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-            <span>#{task.shareableId}</span>
-            <span>•</span>
             <span>Created {format(new Date(task.createdAt), "MMM d, yyyy")}</span>
           </div>
         </DialogHeader>

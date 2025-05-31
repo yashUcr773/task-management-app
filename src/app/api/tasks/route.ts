@@ -249,9 +249,7 @@ export async function GET(request: NextRequest) {
         { error: "Unauthorized" },
         { status: 401 }
       )
-    }
-
-    const { searchParams } = new URL(request.url)
+    }    const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get("page") || "1")
     const limit = parseInt(searchParams.get("limit") || "50")
     const search = searchParams.get("search") || ""
@@ -260,6 +258,7 @@ export async function GET(request: NextRequest) {
     const assigneeId = searchParams.get("assigneeId")
     const epicId = searchParams.get("epicId")
     const sprintId = searchParams.get("sprintId")
+    const showArchived = searchParams.get("showArchived") === "true"
 
     // Get the current user
     const user = await prisma.user.findUnique({
@@ -319,11 +318,12 @@ export async function GET(request: NextRequest) {
 
     if (epicId) {
       where.epicId = epicId
-    }
-
-    if (sprintId) {
+    }    if (sprintId) {
       where.sprintId = sprintId
     }
+
+    // Filter by archived status (default to showing only non-archived tasks)
+    where.isArchived = showArchived
 
     // Get total count
     const total = await prisma.task.count({ where })    // Get tasks with pagination

@@ -13,6 +13,7 @@ interface UseRealTimeTasksOptions {
   epicId?: string
   assigneeId?: string
   status?: string[]
+  showArchived?: boolean
   enableRealTime?: boolean
   showToasts?: boolean
 }
@@ -25,6 +26,7 @@ export function useRealTimeTasks(options: UseRealTimeTasksOptions = {}) {
     epicId,
     assigneeId,
     status,
+    showArchived = false,
     enableRealTime = true,
     showToasts = true
   } = options
@@ -39,8 +41,7 @@ export function useRealTimeTasks(options: UseRealTimeTasksOptions = {}) {
     setIsLoading(true)
     setError(null)
     
-    try {
-      // Build query parameters for filtering
+    try {      // Build query parameters for filtering
       const params = new URLSearchParams()
       if (organizationId) params.append('organizationId', organizationId)
       if (teamId) params.append('teamId', teamId)
@@ -50,6 +51,7 @@ export function useRealTimeTasks(options: UseRealTimeTasksOptions = {}) {
       if (status && status.length > 0) {
         status.forEach(s => params.append('status', s))
       }
+      if (showArchived) params.append('showArchived', 'true')
 
       const response = await fetch(`/api/tasks?${params.toString()}`)
       
@@ -67,19 +69,17 @@ export function useRealTimeTasks(options: UseRealTimeTasksOptions = {}) {
       
       if (showToasts) {
         toast.error(errorMessage)
-      }
-    } finally {
+      }    } finally {
       setIsLoading(false)
     }
-  }, [organizationId, teamId, sprintId, epicId, assigneeId, status, showToasts])
+  }, [organizationId, teamId, sprintId, epicId, assigneeId, status, showArchived, showToasts])
 
   // Handle real-time task updates
   const handleTaskUpdate = useCallback((updatedTask: TasksWithUsersAndTags & { _action?: string }) => {
     // Handle _action property when available from WebSocket messages
     const action = updatedTask._action || 'updated'
     
-    setTasks(prevTasks => {
-      // Filter logic: check if the task matches current filter criteria
+    setTasks(prevTasks => {      // Filter logic: check if the task matches current filter criteria
       const matchesFilter = (task: TasksWithUsersAndTags) => {
         // Check organizationId through team relationship
         if (organizationId && task.team?.organizationId !== organizationId) return false
@@ -88,6 +88,9 @@ export function useRealTimeTasks(options: UseRealTimeTasksOptions = {}) {
         if (epicId && task.epicId !== epicId) return false
         if (assigneeId && task.assigneeId !== assigneeId) return false
         if (status && status.length > 0 && !status.includes(task.status)) return false
+        // Check archived status - only show archived tasks if showArchived is true
+        if (showArchived && !task.isArchived) return false
+        if (!showArchived && task.isArchived) return false
         return true
       }
 
@@ -136,9 +139,8 @@ export function useRealTimeTasks(options: UseRealTimeTasksOptions = {}) {
           return prevTasks
       }
     })
-    
-    setLastUpdate(new Date())
-  }, [organizationId, teamId, sprintId, epicId, assigneeId, status, showToasts])
+      setLastUpdate(new Date())
+  }, [organizationId, teamId, sprintId, epicId, assigneeId, status, showArchived, showToasts])
 
   // Setup real-time updates
   useTaskUpdates(enableRealTime ? handleTaskUpdate : undefined)

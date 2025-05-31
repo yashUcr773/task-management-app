@@ -170,27 +170,35 @@ export function TasksTable({ searchQuery, tasks: externalTasks, isLoading }: Tas
       toast.error('Failed to duplicate task')
     }
   }
-
   const handleArchiveTask = async (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId)
+    const isArchived = task?.isArchived || false
+    
     try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
-        method: 'PATCH',
+      const response = await fetch(`/api/tasks/${taskId}/archive`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ archived: true }),
+        body: JSON.stringify({ archive: !isArchived }),
       })
 
       if (response.ok) {
-        toast.success('Task archived successfully')
-        // Remove from current view
-        setTasks(prev => prev.filter(task => task.id !== taskId))
+        const result = await response.json()
+        toast.success(result.message)
+        
+        // Update the task in the current list
+        setTasks(prev => prev.map(task => 
+          task.id === taskId 
+            ? { ...task, isArchived: !isArchived }
+            : task
+        ))
       } else {
-        throw new Error('Failed to archive task')
+        throw new Error(`Failed to ${isArchived ? 'unarchive' : 'archive'} task`)
       }
     } catch (error) {
       console.log("🚀 ~ handleArchiveTask ~ error:", error)
-      toast.error('Failed to archive task')
+      toast.error(`Failed to ${isArchived ? 'unarchive' : 'archive'} task`)
     }
   }
 
@@ -289,10 +297,16 @@ export function TasksTable({ searchQuery, tasks: externalTasks, isLoading }: Tas
                     checked={selectedTasks.includes(task.id)}
                     onCheckedChange={() => handleSelectTask(task.id)}
                   />
-                </TableCell>
-                <TableCell>
+                </TableCell>                <TableCell>
                   <div className="space-y-1">
-                    <div className="font-medium">{task.title}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{task.title}</span>
+                      {task.isArchived && (
+                        <Badge variant="outline" className="text-xs text-muted-foreground">
+                          Archived
+                        </Badge>
+                      )}
+                    </div>
                     {task.description && (
                       <div className="text-sm text-muted-foreground line-clamp-1">
                         {task.description}
@@ -372,7 +386,9 @@ export function TasksTable({ searchQuery, tasks: externalTasks, isLoading }: Tas
                     </DropdownMenuTrigger>                    <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => handleEditTask(task.id)}>Edit</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleDuplicateTask(task.id)}>Duplicate</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleArchiveTask(task.id)}>Archive</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleArchiveTask(task.id)}>
+                        {task.isArchived ? 'Unarchive' : 'Archive'}
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => handleDeleteTask(task.id)} className="text-destructive">
                         Delete
                       </DropdownMenuItem>

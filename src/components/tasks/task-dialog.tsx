@@ -105,7 +105,6 @@ export function TaskDialog({
   open, 
   onOpenChange, 
   task, 
-  onSave, 
   onTaskUpdated 
 }: TaskDialogProps) {
   const [newTagName, setNewTagName] = useState("")
@@ -222,8 +221,7 @@ export function TaskDialog({
         // Convert empty string values to null for proper API handling
         assigneeId: data.assigneeId === "" || data.assigneeId === "unassigned" ? null : data.assigneeId,
         epicId: data.epicId === "" || data.epicId === "no-epic" ? null : data.epicId,
-        sprintId: data.sprintId === "" || data.sprintId === "no-sprint" ? null : data.sprintId,
-        storyPoints: data.storyPoints === undefined || data.storyPoints === 0 ? null : data.storyPoints,
+        sprintId: data.sprintId === "" || data.sprintId === "no-sprint" ? null : data.sprintId,        storyPoints: data.storyPoints === undefined || data.storyPoints === 0 ? null : data.storyPoints,
         dueDate: data.dueDate ? data.dueDate.toISOString() : null,
         tags: selectedTags,
       }
@@ -245,9 +243,9 @@ export function TaskDialog({
         
         if (isEditing && onTaskUpdated) {
           onTaskUpdated(result.task)
-        } else if (!isEditing && onSave) {
-          onSave(result.task)
         }
+        // Remove the onSave call for create mode to prevent double creation
+        // The real-time hook will handle the new task automatically
         
         onOpenChange(false)
         

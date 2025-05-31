@@ -122,89 +122,97 @@ export function DashboardOverview() {
           <h1 className="text-3xl font-bold tracking-tight">{getGreeting()}</h1>
           <p className="text-muted-foreground">Here&apos;s what&apos;s happening with your projects today.</p>
         </div>
-      </div>
-
-      {/* Stats Grid */}
+      </div>      {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
-            <CheckSquare className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{taskStats.total}</div>
-            <p className="text-xs text-muted-foreground">
-              {dynamicStats.newTasksThisWeek > 0 
-                ? `+${dynamicStats.newTasksThisWeek} new this week`
-                : 'No new tasks this week'
-              }
-            </p>
-          </CardContent>
-        </Card>
+        <Link href="/tasks" className="block">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
+              <CheckSquare className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{taskStats.total}</div>
+              <p className="text-xs text-muted-foreground">
+                {dynamicStats.newTasksThisWeek > 0 
+                  ? `+${dynamicStats.newTasksThisWeek} new this week`
+                  : 'No new tasks this week'
+                }
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-            <Clock className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{taskStats.inProgress}</div>
-            <p className="text-xs text-muted-foreground">
-              {dynamicStats.inProgressChange > 0 
-                ? `+${dynamicStats.inProgressChange} since yesterday`
-                : 'No recent changes'
-              }
-            </p>
-          </CardContent>
-        </Card>
+        <Link href="/tasks?status=IN_DEV" className="block">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+              <Clock className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{taskStats.inProgress}</div>
+              <p className="text-xs text-muted-foreground">
+                {dynamicStats.inProgressChange > 0 
+                  ? `+${dynamicStats.inProgressChange} since yesterday`
+                  : 'No recent changes'
+                }
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Overdue</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{overdueTasks.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {overdueTasks.length > 0 
-                ? 'Requires attention'
-                : 'All tasks on track'
-              }
-            </p>
-          </CardContent>
-        </Card>
+        <Link href="/tasks?filter=overdue" className="block">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Overdue</CardTitle>
+              <AlertCircle className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{overdueTasks.length}</div>
+              <p className="text-xs text-muted-foreground">
+                {overdueTasks.length > 0 
+                  ? 'Requires attention'
+                  : 'All tasks on track'
+                }
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <CheckSquare className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{taskStats.completed}</div>
-            <p className="text-xs text-muted-foreground">
-              {dynamicStats.completedThisWeek > 0 
-                ? `+${dynamicStats.completedThisWeek} this week`
-                : 'No completions this week'
-              }
-            </p>
-          </CardContent>
-        </Card>
+        <Link href="/tasks?status=RELEASED" className="block">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completed</CardTitle>
+              <CheckSquare className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{taskStats.completed}</div>
+              <p className="text-xs text-muted-foreground">
+                {dynamicStats.completedThisWeek > 0 
+                  ? `+${dynamicStats.completedThisWeek} this week`
+                  : 'No completions this week'
+                }
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Team Members</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{teamStats.totalMembers}</div>
-            <p className="text-xs text-muted-foreground">
-              {teamStats.totalTeams === 1 
-                ? `Across ${teamStats.totalTeams} team`
-                : `Across ${teamStats.totalTeams} teams`
-              }
-            </p>
-          </CardContent>
-        </Card>
+        <Link href="/teams" className="block">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Team Members</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{teamStats.totalMembers}</div>
+              <p className="text-xs text-muted-foreground">
+                {teamStats.totalTeams === 1 
+                  ? `Across ${teamStats.totalTeams} team`
+                  : `Across ${teamStats.totalTeams} teams`
+                }
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -223,30 +231,31 @@ export function DashboardOverview() {
                 </Link>
               </Button>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
+          </CardHeader>          <CardContent className="space-y-4">
             {recentTasks.length > 0 ? recentTasks.map((task) => (
-              <div key={task.id} className="flex items-center space-x-4">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>
-                    {task.assignee?.name ? task.assignee.name.slice(0, 2).toUpperCase() : 'UN'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 space-y-1">
-                  <p className="text-sm font-medium leading-none">{task.title}</p>
-                  <div className="flex items-center space-x-2">
-                    <Badge variant={task.status === 'IN_DEV' ? 'default' : 'secondary'} className="text-xs">
-                      {task.status.replace('_', ' ')}
-                    </Badge>
-                    <Badge variant={task.priority === 'HIGH' ? 'destructive' : task.priority === 'MEDIUM' ? 'default' : 'secondary'} className="text-xs">
-                      {task.priority}
-                    </Badge>
+              <Link key={task.id} href={`/tasks?id=${task.id}`} className="block">
+                <div className="flex items-center space-x-4 p-2 rounded-lg hover:bg-muted/50 transition-colors duration-200 cursor-pointer">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>
+                      {task.assignee?.name ? task.assignee.name.slice(0, 2).toUpperCase() : 'UN'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 space-y-1">
+                    <p className="text-sm font-medium leading-none">{task.title}</p>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant={task.status === 'IN_DEV' ? 'default' : 'secondary'} className="text-xs">
+                        {task.status.replace('_', ' ')}
+                      </Badge>
+                      <Badge variant={task.priority === 'HIGH' ? 'destructive' : task.priority === 'MEDIUM' ? 'default' : 'secondary'} className="text-xs">
+                        {task.priority}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {task.dueDate ? `Due ${new Date(task.dueDate).toLocaleDateString()}` : 'No due date'}
                   </div>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {task.dueDate ? `Due ${new Date(task.dueDate).toLocaleDateString()}` : 'No due date'}
-                </div>
-              </div>
+              </Link>
             )) : (
               <p className="text-sm text-muted-foreground">No recent tasks</p>
             )}
@@ -268,20 +277,21 @@ export function DashboardOverview() {
                 </Link>
               </Button>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
+          </CardHeader>          <CardContent className="space-y-4">
             {upcomingDeadlines.length > 0 ? upcomingDeadlines.map((task) => (
-              <div key={task.id} className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">{task.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {task.epic?.title ? `Epic: ${task.epic.title}` : 'Task'}
-                  </p>
+              <Link key={task.id} href={`/tasks?id=${task.id}`} className="block">
+                <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors duration-200 cursor-pointer">
+                  <div>
+                    <p className="text-sm font-medium">{task.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {task.epic?.title ? `Epic: ${task.epic.title}` : 'Task'}
+                    </p>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No date'}
+                  </div>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No date'}
-                </div>
-              </div>
+              </Link>
             )) : (
               <p className="text-sm text-muted-foreground">No upcoming deadlines</p>
             )}
