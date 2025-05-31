@@ -16,8 +16,6 @@ import { MoreHorizontal, Calendar, MessageSquare, Paperclip } from "lucide-react
 import { formatDistanceToNow } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
 
-// TODO: Replace with real API calls to fetch tasks
-
 interface TasksListProps {
   searchQuery: string
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

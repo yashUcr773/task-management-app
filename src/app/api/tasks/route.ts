@@ -12,6 +12,7 @@ const createTaskSchema = z.object({
   storyPoints: z.number().min(0).max(100).optional(),
   dueDate: z.string().optional(), // ISO date string
   assigneeId: z.string().optional(),
+  teamId: z.string().optional(),
   epicId: z.string().optional(),
   sprintId: z.string().optional(),
   tags: z.array(z.object({
@@ -44,27 +45,64 @@ export async function POST(request: NextRequest) {
         { error: "User not found" },
         { status: 404 }
       )
-    }    // For now, we'll use the user's first organization's first team
-    // TODO: Support team selection in the UI
-    const userOrg = await prisma.userOrganization.findFirst({
-      where: { userId: user.id },
-      include: { 
-        organization: {
-          include: {
-            teams: true
+    }    // Support team selection with fallback to user's first team
+    let teamId = validatedData.teamId;
+    
+    if (!teamId) {
+      // Fallback: use the user's first organization's first team
+      const userOrg = await prisma.userOrganization.findFirst({
+        where: { userId: user.id },
+        include: { 
+          organization: {
+            include: {
+              teams: true
+            }
           }
         }
+      })
+
+      if (!userOrg || !userOrg.organization.teams.length) {
+        return NextResponse.json(
+          { error: "User not part of any organization with teams" },
+          { status: 400 }
+        )
       }
-    })
 
-    if (!userOrg || !userOrg.organization.teams.length) {
-      return NextResponse.json(
-        { error: "User not part of any organization with teams" },
-        { status: 400 }
-      )
-    }
+      teamId = userOrg.organization.teams[0].id
+    } else {
+      // Verify user has access to the specified team
+      const teamAccess = await prisma.team.findFirst({
+        where: {
+          id: teamId,
+          OR: [
+            {
+              members: {
+                some: {
+                  userId: user.id
+                }
+              }
+            },
+            {
+              organization: {
+                users: {
+                  some: {
+                    userId: user.id,
+                    role: "ADMIN"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      })
 
-    const defaultTeam = userOrg.organization.teams[0]    // Create the task
+      if (!teamAccess) {
+        return NextResponse.json(
+          { error: "You don't have access to this team" },
+          { status: 403 }
+        )
+      }
+    }// Create the task
     const task = await prisma.task.create({
       data: {
         title: validatedData.title,
@@ -75,7 +113,7 @@ export async function POST(request: NextRequest) {
         dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : null,
         assigneeId: validatedData.assigneeId || null,
         creatorId: user.id,
-        teamId: defaultTeam.id,
+        teamId: teamId,
         epicId: validatedData.epicId || null,
         sprintId: validatedData.sprintId || null,
         // tags will be handled separately due to many-to-many relationship

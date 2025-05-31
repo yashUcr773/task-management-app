@@ -14,21 +14,54 @@ import {
   ArrowRight
 } from "lucide-react"
 import Link from "next/link"
+import { useRealTimeTasks } from "@/hooks/use-real-time-tasks"
+import { useEffect, useState } from "react"
+
+interface TeamStats {
+  totalMembers: number
+  totalTeams: number
+}
 
 export function DashboardOverview() {
-  // TODO: Replace with real data from API
-  const stats = {
-    totalTasks: 0,
-    inProgress: 0,
-    overdue: 0,
-    completed: 0,
-    teamMembers: 0
-  }
+  const { tasks, taskStats, overdueTasks } = useRealTimeTasks()
+  const [teamStats, setTeamStats] = useState<TeamStats>({ totalMembers: 0, totalTeams: 0 })
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recentTasks: any[] = []
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const upcomingDeadlines: any[] = []
+  // Fetch team statistics
+  useEffect(() => {
+    const fetchTeamStats = async () => {
+      try {
+        const response = await fetch('/api/teams')
+        if (response.ok) {
+          const { teams } = await response.json()
+          const totalMembers = teams.reduce((total: number, team: any) => 
+            total + (team.members?.length || 0), 0
+          )
+          setTeamStats({
+            totalMembers,
+            totalTeams: teams.length
+          })
+        }
+      } catch (error) {
+        console.error('Failed to fetch team stats:', error)
+      }
+    }
+
+    fetchTeamStats()
+  }, [])
+
+  // Get recent tasks (last 5 tasks)
+  const recentTasks = tasks.slice(0, 5)
+  
+  // Get upcoming deadlines (tasks due in next 7 days)
+  const upcomingDeadlines = tasks
+    .filter(task => {
+      if (!task.dueDate || task.status === 'RELEASED') return false
+      const dueDate = new Date(task.dueDate)
+      const sevenDaysFromNow = new Date()
+      sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7)
+      return dueDate <= sevenDaysFromNow && dueDate >= new Date()
+    })
+    .slice(0, 5)
 
   return (
     <div className="space-y-6">
@@ -52,7 +85,7 @@ export function DashboardOverview() {
             <CheckSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalTasks}</div>
+            <div className="text-2xl font-bold">{taskStats.total}</div>
             <p className="text-xs text-muted-foreground">
               +2 from last week
             </p>
@@ -65,7 +98,7 @@ export function DashboardOverview() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.inProgress}</div>
+            <div className="text-2xl font-bold">{taskStats.inProgress}</div>
             <p className="text-xs text-muted-foreground">
               +1 from yesterday
             </p>
@@ -78,7 +111,7 @@ export function DashboardOverview() {
             <AlertCircle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">{stats.overdue}</div>
+            <div className="text-2xl font-bold text-destructive">{overdueTasks.length}</div>
             <p className="text-xs text-muted-foreground">
               Needs attention
             </p>
@@ -91,7 +124,7 @@ export function DashboardOverview() {
             <CheckSquare className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.completed}</div>
+            <div className="text-2xl font-bold">{taskStats.completed}</div>
             <p className="text-xs text-muted-foreground">
               +5 this week
             </p>
@@ -104,9 +137,8 @@ export function DashboardOverview() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.teamMembers}</div>
-            <p className="text-xs text-muted-foreground">
-              Across 3 teams
+            <div className="text-2xl font-bold">{teamStats.totalMembers}</div>            <p className="text-xs text-muted-foreground">
+              Across {teamStats.totalTeams} teams
             </p>
           </CardContent>
         </Card>
@@ -128,12 +160,13 @@ export function DashboardOverview() {
                 </Link>
               </Button>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {recentTasks.map((task) => (
+          </CardHeader>          <CardContent className="space-y-4">
+            {recentTasks.length > 0 ? recentTasks.map((task) => (
               <div key={task.id} className="flex items-center space-x-4">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback>{task.assignee.slice(0, 2)}</AvatarFallback>
+                  <AvatarFallback>
+                    {task.assignee?.name ? task.assignee.name.slice(0, 2).toUpperCase() : 'UN'}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 space-y-1">
                   <p className="text-sm font-medium leading-none">{task.title}</p>
@@ -147,10 +180,12 @@ export function DashboardOverview() {
                   </div>
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Due {new Date(task.dueDate).toLocaleDateString()}
+                  {task.dueDate ? `Due ${new Date(task.dueDate).toLocaleDateString()}` : 'No due date'}
                 </div>
               </div>
-            ))}
+            )) : (
+              <p className="text-sm text-muted-foreground">No recent tasks</p>
+            )}
           </CardContent>
         </Card>
 
@@ -169,19 +204,22 @@ export function DashboardOverview() {
                 </Link>
               </Button>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {upcomingDeadlines.map((deadline, index) => (
-              <div key={index} className="flex items-center justify-between">
+          </CardHeader>          <CardContent className="space-y-4">
+            {upcomingDeadlines.length > 0 ? upcomingDeadlines.map((task) => (
+              <div key={task.id} className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium">{deadline.title}</p>
-                  <p className="text-xs text-muted-foreground">{deadline.type}</p>
+                  <p className="text-sm font-medium">{task.title}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {task.epic?.title ? `Epic: ${task.epic.title}` : 'Task'}
+                  </p>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {new Date(deadline.date).toLocaleDateString()}
+                  {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No date'}
                 </div>
               </div>
-            ))}
+            )) : (
+              <p className="text-sm text-muted-foreground">No upcoming deadlines</p>
+            )}
           </CardContent>
         </Card>
       </div>

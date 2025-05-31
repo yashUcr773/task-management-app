@@ -435,16 +435,45 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         { error: "Task not found" },
         { status: 404 }
       )
-    }
+    }    // Role-based access control for deletion
+    // Allow: task creator, assignee, team members with admin role, organization admins
+    const hasDeletePermission = existingTask.creatorId === user.id || 
+                                existingTask.assigneeId === user.id;
+    
+    if (!hasDeletePermission) {
+      // Check if user is admin of the team or organization
+      const teamMember = await prisma.teamMember.findFirst({
+        where: {
+          userId: user.id,
+          teamId: existingTask.teamId,
+        },
+        include: {
+          team: {
+            include: {
+              organization: {
+                include: {
+                  users: {
+                    where: {
+                      userId: user.id,
+                      role: "ADMIN"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
 
-    // TODO: Add role-based access control for deletion
-    // For now, only allow the reporter or assignee to delete
-    if (existingTask.creatorId !== user.id && existingTask.assigneeId !== user.id) {
-      return NextResponse.json(
-        { error: "You don't have permission to delete this task" },
-        { status: 403 }
-      )
-    }    // Create activity log before deletion
+      const isOrgAdmin = (teamMember?.team.organization.users?.length || 0) > 0;
+      
+      if (!isOrgAdmin) {
+        return NextResponse.json(
+          { error: "You don't have permission to delete this task" },
+          { status: 403 }
+        )
+      }
+    }// Create activity log before deletion
     await prisma.activity.create({
       data: {
         type: "TASK_DELETED",

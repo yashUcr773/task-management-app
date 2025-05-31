@@ -8,8 +8,6 @@ import { KanbanColumn } from "./kanban-column"
 import { TaskCard } from "./task-card"
 import { TaskStatus } from "@prisma/client"
 
-// TODO: Replace with real API calls to fetch tasks
-
 const columns = [
   { id: "PICKED", title: "Picked", color: "bg-blue-50 border-blue-200" },
   { id: "TODO", title: "To Do", color: "bg-gray-50 border-gray-200" },

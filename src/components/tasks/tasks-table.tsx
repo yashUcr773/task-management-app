@@ -23,8 +23,6 @@ import { MoreHorizontal, ArrowUpDown, MessageSquare, Paperclip } from "lucide-re
 import { formatDistanceToNow } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
 
-// TODO: Replace with real API calls to fetch tasks
-
 interface TasksTableProps {
   searchQuery: string
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
