@@ -97,7 +97,7 @@ export default function SignIn() {
               </div>
               <blockquote className="space-y-2">
                 <p className="text-lg leading-relaxed">
-                  "TaskFlow has revolutionized how our team manages projects. The intuitive interface and powerful features make collaboration seamless."
+                  &quot;TaskFlow has revolutionized how our team manages projects. The intuitive interface and powerful features make collaboration seamless.&quot;
                 </p>
                 <footer className="flex items-center space-x-3 mt-4">
                   <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
@@ -236,7 +236,7 @@ export default function SignIn() {
                 {/* Sign up link */}
                 <div className="text-center">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Don't have an account?{" "}
+                    Don&apos;t have an account?{" "}
                     <Link 
                       href="/auth/signup" 
                       className="font-medium text-blue-600 hover:text-blue-500 transition-colors"

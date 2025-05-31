@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "ws-server": "node websocket-server.js",
-    "test-realtime": "concurrently \"npm run ws-server\" \"npm run dev\""
+    "realtime": "concurrently \"npm run ws-server\" \"npm run dev\""
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.9.1",

@@ -239,7 +239,7 @@ export function LandingPage() {
                   </div>
                 </div>
                 <CardDescription className="text-base">
-                  "TaskFlow has revolutionized how our team manages projects. The intuitive interface and powerful features make collaboration seamless. Our productivity has increased by 40%!"
+                  &quot;TaskFlow has revolutionized how our team manages projects. The intuitive interface and powerful features make collaboration seamless. Our productivity has increased by 40%!&quot;
                 </CardDescription>
                 <div className="flex items-center space-x-1 mt-4">
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -260,7 +260,7 @@ export function LandingPage() {
                   </div>
                 </div>
                 <CardDescription className="text-base">
-                  "The real-time collaboration features are incredible. Our remote team feels more connected than ever. TaskFlow's Kanban boards and sprint planning tools are game-changers."
+                  &quot;The real-time collaboration features are incredible. Our remote team feels more connected than ever. TaskFlow&apos;s Kanban boards and sprint planning tools are game-changers.&quot;
                 </CardDescription>
                 <div className="flex items-center space-x-1 mt-4">
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -281,7 +281,7 @@ export function LandingPage() {
                   </div>
                 </div>
                 <CardDescription className="text-base">
-                  "We've tried many project management tools, but TaskFlow is by far the best. The analytics and reporting features help us make data-driven decisions every day."
+                  &quot;We&apos;ve tried many project management tools, but TaskFlow is by far the best. The analytics and reporting features help us make data-driven decisions every day.&quot;
                 </CardDescription>
                 <div className="flex items-center space-x-1 mt-4">
                   {Array.from({ length: 5 }).map((_, i) => (
