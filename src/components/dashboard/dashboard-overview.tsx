@@ -37,6 +37,18 @@ export function DashboardOverview() {
   const { tasks, taskStats, overdueTasks } = useRealTimeTasks()
   const [teamStats, setTeamStats] = useState<TeamStats>({ totalMembers: 0, totalTeams: 0 })
 
+  // Get greeting based on time of day
+  const getGreeting = () => {
+    const hour = new Date().getHours()
+    if (hour < 12) {
+      return "Good morning! ☀️"
+    } else if (hour < 17) {
+      return "Good afternoon! 🌤️"
+    } else {
+      return "Good evening! 🌙"
+    }
+  }
+
   // Fetch team statistics
   useEffect(() => {
     const fetchTeamStats = async () => {
@@ -59,9 +71,42 @@ export function DashboardOverview() {
 
     fetchTeamStats()
   }, [])
-
   // Get recent tasks (last 5 tasks)
   const recentTasks = tasks.slice(0, 5)
+  
+  // Calculate dynamic stats
+  const getDynamicStats = () => {
+    const now = new Date()
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    
+    // Tasks created this week vs last week
+    const thisWeekTasks = tasks.filter(task => 
+      new Date(task.createdAt) >= weekAgo
+    ).length
+    
+    // Tasks moved to IN_DEV yesterday
+    const yesterdayInProgressTasks = tasks.filter(task => 
+      task.status === 'IN_DEV' && 
+      task.updatedAt && 
+      new Date(task.updatedAt) >= yesterday
+    ).length
+    
+    // Tasks completed this week
+    const thisWeekCompleted = tasks.filter(task => 
+      task.status === 'RELEASED' && 
+      task.updatedAt && 
+      new Date(task.updatedAt) >= weekAgo
+    ).length
+    
+    return {
+      newTasksThisWeek: thisWeekTasks,
+      inProgressYesterday: yesterdayInProgressTasks,
+      completedThisWeek: thisWeekCompleted
+    }
+  }
+  
+  const dynamicStats = getDynamicStats()
   
   // Get upcoming deadlines (tasks due in next 7 days)
   const upcomingDeadlines = tasks
@@ -73,19 +118,13 @@ export function DashboardOverview() {
       return dueDate <= sevenDaysFromNow && dueDate >= new Date()
     })
     .slice(0, 5)
-
   return (
-    <div className="space-y-6">
-      {/* Welcome Section */}
-      <div className="flex items-center justify-between">
+    <div className="container mx-auto py-6 space-y-6">
+      {/* Header */}      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Good morning! 👋</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{getGreeting()}</h1>
           <p className="text-muted-foreground">Here&apos;s what&apos;s happening with your projects today.</p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Create Task
-        </Button>
       </div>
 
       {/* Stats Grid */}
@@ -94,11 +133,13 @@ export function DashboardOverview() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
             <CheckSquare className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
+          </CardHeader>          <CardContent>
             <div className="text-2xl font-bold">{taskStats.total}</div>
             <p className="text-xs text-muted-foreground">
-              +2 from last week
+              {dynamicStats.newTasksThisWeek > 0 
+                ? `+${dynamicStats.newTasksThisWeek} this week`
+                : 'No new tasks this week'
+              }
             </p>
           </CardContent>
         </Card>
@@ -107,11 +148,13 @@ export function DashboardOverview() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">In Progress</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
+          </CardHeader>          <CardContent>
             <div className="text-2xl font-bold">{taskStats.inProgress}</div>
             <p className="text-xs text-muted-foreground">
-              +1 from yesterday
+              {dynamicStats.inProgressYesterday > 0 
+                ? `+${dynamicStats.inProgressYesterday} since yesterday`
+                : 'No new progress yesterday'
+              }
             </p>
           </CardContent>
         </Card>
@@ -120,11 +163,10 @@ export function DashboardOverview() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Overdue</CardTitle>
             <AlertCircle className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
+          </CardHeader>          <CardContent>
             <div className="text-2xl font-bold text-destructive">{overdueTasks.length}</div>
             <p className="text-xs text-muted-foreground">
-              Needs attention
+              {overdueTasks.length > 0 ? 'Needs attention' : 'All tasks on track'}
             </p>
           </CardContent>
         </Card>
@@ -133,11 +175,13 @@ export function DashboardOverview() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Completed</CardTitle>
             <CheckSquare className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
+          </CardHeader>          <CardContent>
             <div className="text-2xl font-bold">{taskStats.completed}</div>
             <p className="text-xs text-muted-foreground">
-              +5 this week
+              {dynamicStats.completedThisWeek > 0 
+                ? `+${dynamicStats.completedThisWeek} this week`
+                : 'No completions this week'
+              }
             </p>
           </CardContent>
         </Card>
@@ -146,10 +190,12 @@ export function DashboardOverview() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Team Members</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
+          </CardHeader>          <CardContent>
             <div className="text-2xl font-bold">{teamStats.totalMembers}</div>            <p className="text-xs text-muted-foreground">
-              Across {teamStats.totalTeams} teams
+              {teamStats.totalTeams === 1 
+                ? `Across ${teamStats.totalTeams} team`
+                : `Across ${teamStats.totalTeams} teams`
+              }
             </p>
           </CardContent>
         </Card>

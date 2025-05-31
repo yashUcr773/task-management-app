@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
@@ -24,12 +25,14 @@ import {
   Wifi,
   WifiOff,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  ChevronLeft
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 
 export function TasksView() {
+  const router = useRouter()
   const [createTaskOpen, setCreateTaskOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
@@ -116,10 +119,21 @@ export function TasksView() {
     task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     task.assignee?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   )
-
   return (
-    <div className="space-y-6">
-      {/* Header Actions */}
+    <div className="container mx-auto py-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Tasks</h1>
+            <p className="text-muted-foreground">
+              Manage and track your tasks across projects
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Search and Filters */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div className="relative">
@@ -224,10 +238,6 @@ export function TasksView() {
             <List className="h-4 w-4" />
             <span>List</span>
           </TabsTrigger>
-          <TabsTrigger value="calendar" className="flex items-center space-x-2">
-            <Calendar className="h-4 w-4" />
-            <span>Calendar</span>
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="kanban" className="space-y-4">
@@ -253,14 +263,7 @@ export function TasksView() {
             tasks={filteredTasks}
             isLoading={isLoading}
           />
-        </TabsContent>
-
-        <TabsContent value="calendar" className="space-y-4">
-          <TasksCalendar 
-            tasks={filteredTasks}
-            isLoading={isLoading}
-          />
-        </TabsContent>
+        </TabsContent>        
       </Tabs>
 
       {/* Dialogs */}

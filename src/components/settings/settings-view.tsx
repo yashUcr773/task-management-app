@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
@@ -22,7 +23,8 @@ import {
   Globe,
   Moon,
   Sun,
-  Monitor
+  Monitor,
+  ChevronLeft
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -45,6 +47,7 @@ interface SettingsState {
 }
 
 export function SettingsView() {
+  const router = useRouter()
   const [settings, setSettings] = useState<SettingsState>({
     appearance: {
       theme: 'system',
@@ -116,9 +119,10 @@ export function SettingsView() {
       toast.error("Account deletion is not implemented in this demo")
     }
   }
-
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="container mx-auto py-6 space-y-6">
+      {/* Settings Content */}
+      <div className="max-w-4xl">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold flex items-center space-x-2">
@@ -463,12 +467,12 @@ export function SettingsView() {
         </TabsContent>
       </Tabs>
 
-      {/* Save Button */}
-      <div className="flex justify-end">
+      {/* Save Button */}      <div className="flex justify-end">
         <Button onClick={handleSaveSettings} disabled={loading}>
           {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
           Save All Settings
         </Button>
+      </div>
       </div>
     </div>
   )

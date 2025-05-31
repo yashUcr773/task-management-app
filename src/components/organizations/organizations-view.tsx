@@ -171,14 +171,6 @@ export function OrganizationsView() {
     <div className="container mx-auto py-6 space-y-6">      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.back()}
-            className="h-8 w-8 p-0"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Organizations</h1>
             <p className="text-muted-foreground">

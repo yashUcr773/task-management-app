@@ -366,18 +366,18 @@ export function TasksCalendar({ tasks = [], onTaskClick, isLoading }: TasksCalen
           <CardContent className="space-y-3">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Total Tasks</span>
-              <span className="font-medium">{tasks.filter(t => t.dueDate && t.dueDate.getMonth() === currentDate.getMonth()).length}</span>
+              <span className="font-medium">{tasks.filter(t => t.dueDate && new Date(t.dueDate).getMonth() === currentDate.getMonth()).length}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">High Priority</span>
               <span className="font-medium text-red-600">
-                {tasks.filter(t => t.priority === "HIGH" && t.dueDate && t.dueDate.getMonth() === currentDate.getMonth()).length}
+                {tasks.filter(t => t.priority === "HIGH" && t.dueDate && new Date(t.dueDate).getMonth() === currentDate.getMonth()).length}
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Completed</span>
               <span className="font-medium text-green-600">
-                {tasks.filter(t => t.status === "RELEASED" && t.dueDate && t.dueDate.getMonth() === currentDate.getMonth()).length}
+                {tasks.filter(t => t.status === "RELEASED" && t.dueDate && new Date(t.dueDate).getMonth() === currentDate.getMonth()).length}
               </span>
             </div>
             <div className="flex justify-between text-sm">

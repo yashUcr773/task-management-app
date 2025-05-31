@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -12,7 +13,8 @@ import {
   Settings,
   MoreHorizontal,
   Calendar,
-  CheckSquare
+  CheckSquare,
+  ChevronLeft
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -48,6 +50,7 @@ interface Team {
 }
 
 export function TeamsView() {
+  const router = useRouter()
   const [createTeamOpen, setCreateTeamOpen] = useState(false)
   const [teams, setTeams] = useState<Team[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -100,42 +103,34 @@ export function TeamsView() {
         return "bg-gray-100 text-gray-800"
     }
   }
-
   if (isLoading) {
     return (
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {[...Array(6)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardHeader>
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="h-3 bg-gray-200 rounded"></div>
-                <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="container mx-auto py-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header Actions */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h3 className="text-lg font-medium">Your Teams</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage and collaborate with your teams
-          </p>
+    <div className="container mx-auto py-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Teams</h1>
+            <p className="text-muted-foreground">
+              Manage and collaborate with your teams
+            </p>
+          </div>
         </div>
-        <Button onClick={() => setCreateTeamOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Create Team
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setCreateTeamOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Team
+          </Button>
+        </div>
       </div>
 
       {/* Teams Grid */}

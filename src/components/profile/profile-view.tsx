@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -16,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { useAuth } from "@/components/providers/auth-provider"
 import { toast } from "sonner"
-import { Loader2, User, Settings, Mail, Clock, Bell } from "lucide-react"
+import { Loader2, User, Settings, Mail, Clock, Bell, ChevronLeft } from "lucide-react"
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -69,6 +70,7 @@ const timezones = [
 ]
 
 export function ProfileView() {
+  const router = useRouter()
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { session } = useAuth()
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -146,27 +148,52 @@ export function ProfileView() {
       setUpdating(false)
     }
   }
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="container mx-auto py-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
       </div>
     )
   }
 
   if (!profile) {
     return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">Profile not found</p>
+      <div className="container mx-auto py-6">
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Profile not found</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center space-x-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.back()}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
+            <p className="text-muted-foreground">
+              Manage your personal information and preferences
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Profile Content */}
+      <div className="max-w-4xl space-y-8">
+        {/* User Info */}
+        <div className="flex items-center space-x-4">
         <Avatar className="h-20 w-20">
           <AvatarImage src={profile.image || ""} alt={profile.name || ""} />
           <AvatarFallback className="text-lg">
@@ -445,10 +472,10 @@ export function ProfileView() {
                   <span className="text-sm">Team Memberships</span>
                   <span className="text-sm font-medium">{profile._count.teamMemberships}</span>
                 </div>
-              </div>
-            </CardContent>
+              </div>          </CardContent>
           </Card>
         </div>
+      </div>
       </div>
     </div>
   )
