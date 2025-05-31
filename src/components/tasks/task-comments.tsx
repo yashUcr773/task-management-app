@@ -97,12 +97,10 @@ export function TaskComments({ taskId }: TaskCommentsProps) {
       setSubmitting(false)
     }
   }
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault()
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      handleSubmit(e as any)
+      handleSubmit(e as unknown as React.FormEvent)
     }
   }
 

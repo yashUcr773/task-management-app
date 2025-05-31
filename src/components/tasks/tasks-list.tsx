@@ -15,11 +15,11 @@ import {
 import { MoreHorizontal, Calendar, MessageSquare, Paperclip } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
+import { TasksWithUsersAndTags } from "@/types/all-types"
 
 interface TasksListProps {
   searchQuery: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tasks?: any[]
+  tasks?: TasksWithUsersAndTags[]
   isLoading?: boolean
 }
 
@@ -34,10 +34,10 @@ export function TasksList({ searchQuery, tasks: externalTasks, isLoading }: Task
     }
   }, [externalTasks])
 
-  const filteredTasks = tasks.filter((task: any) => 
+  const filteredTasks = tasks.filter((task: TasksWithUsersAndTags) => 
     task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    task.assignee?.name.toLowerCase().includes(searchQuery.toLowerCase())
+    task.assignee?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   const getPriorityColor = (priority: string) => {
@@ -125,7 +125,7 @@ export function TasksList({ searchQuery, tasks: externalTasks, isLoading }: Task
               </CardContent>
             </Card>
           ))        ) : (
-          filteredTasks.map((task: any) => (
+          filteredTasks.map((task: TasksWithUsersAndTags) => (
           <Card key={task.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-4">
               <div className="flex items-start space-x-4">
@@ -172,14 +172,12 @@ export function TasksList({ searchQuery, tasks: externalTasks, isLoading }: Task
                   </div>
 
                   {task.tags && task.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                      {task.tags.map((tag: any, index: number) => (
+                    <div className="flex flex-wrap gap-1">                      {task.tags.map((tag, index: number) => (
                         <Badge 
                           key={index} 
                           variant="outline" 
                           className="text-xs"
-                          style={{ borderColor: tag.color, color: tag.color }}
+                          style={{ borderColor: tag.color || '#ccc', color: tag.color || '#666' }}
                         >
                           {tag.name}
                         </Badge>
@@ -192,9 +190,8 @@ export function TasksList({ searchQuery, tasks: externalTasks, isLoading }: Task
                       {task.assignee && (
                         <div className="flex items-center space-x-2">
                           <Avatar className="h-6 w-6">
-                            <AvatarImage src={task.assignee.image || ""} />
-                            <AvatarFallback className="text-xs">
-                              {task.assignee.name.slice(0, 2).toUpperCase()}
+                            <AvatarImage src={task.assignee.image || ""} />                            <AvatarFallback className="text-xs">
+                              {task.assignee.name?.slice(0, 2).toUpperCase() || "UN"}
                             </AvatarFallback>
                           </Avatar>
                           <span className="text-sm text-muted-foreground">

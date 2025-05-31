@@ -22,6 +22,17 @@ interface TeamStats {
   totalTeams: number
 }
 
+interface TeamWithMembers {
+  members?: Array<{
+    user: {
+      id: string
+      name: string
+      email: string
+      image?: string | null
+    }
+  }>
+}
+
 export function DashboardOverview() {
   const { tasks, taskStats, overdueTasks } = useRealTimeTasks()
   const [teamStats, setTeamStats] = useState<TeamStats>({ totalMembers: 0, totalTeams: 0 })
@@ -33,7 +44,7 @@ export function DashboardOverview() {
         const response = await fetch('/api/teams')
         if (response.ok) {
           const { teams } = await response.json()
-          const totalMembers = teams.reduce((total: number, team: any) => 
+          const totalMembers = teams.reduce((total: number, team: TeamWithMembers) => 
             total + (team.members?.length || 0), 0
           )
           setTeamStats({

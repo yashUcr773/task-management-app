@@ -12,6 +12,7 @@ import { CreateTaskDialog } from "@/components/tasks/create-task-dialog"
 import { TaskDetailsModal } from "@/components/tasks/task-details-modal"
 import { useRealTimeTasks } from "@/hooks/use-real-time-tasks"
 import { useWebSocket } from "@/hooks/use-websocket"
+import { TasksWithUsersAndTags } from "@/types/all-types"
 import { 
   Plus, 
   Filter, 
@@ -50,37 +51,67 @@ export function TasksView() {
     enableRealTime: true,
     showToasts: true
   })
-
   // WebSocket connection status
   const { isConnected } = useWebSocket()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  const handleTaskSave = async (taskData: any) => {
+    const handleTaskSave = async (taskData: {
+    title: string;
+    description?: string;
+    status: string;
+    priority: string;
+    storyPoints?: number;
+    dueDate?: Date;
+    assigneeId?: string;
+    epicId?: string;
+    sprintId?: string;
+    tags?: Array<{ name: string; color: string }>;
+  }) => {
     try {
-      // In a real application, this would make an API call
-      // For now, we'll just show a success message
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: taskData.title,
+          description: taskData.description,
+          status: taskData.status,
+          priority: taskData.priority,
+          storyPoints: taskData.storyPoints,
+          dueDate: taskData.dueDate?.toISOString(),
+          assigneeId: taskData.assigneeId,
+          epicId: taskData.epicId,
+          sprintId: taskData.sprintId,
+          tags: taskData.tags || [],
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create task')
+      }
+
       toast.success("Task created successfully!")
       setCreateTaskOpen(false)
       
-      // The real-time hook will handle updates automatically
-      // when the WebSocket receives the new task event
+      // Refresh tasks to show the new one
+      refreshTasks()
     } catch (error) {
       console.error('Failed to save task:', error)
-      toast.error('Failed to create task')
+      toast.error(error instanceof Error ? error.message : 'Failed to create task')
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleTaskClick = (task: any) => {
+  const handleTaskClick = (task: TasksWithUsersAndTags) => {
     setSelectedTaskId(task.id)
     setTaskDetailsOpen(true)
   }
 
   const handleRefresh = () => {
     refreshTasks()
-    toast.info('Refreshing tasks...')
-  }
+    toast.info('Refreshing tasks...')  }
   // Filter tasks based on search query
-  const filteredTasks = tasks.filter((task: any) =>
+  const filteredTasks = tasks.filter((task: TasksWithUsersAndTags) =>
     task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     task.assignee?.name?.toLowerCase().includes(searchQuery.toLowerCase())

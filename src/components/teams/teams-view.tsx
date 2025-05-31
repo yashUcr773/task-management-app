@@ -71,11 +71,21 @@ export function TeamsView() {
       toast.error("Failed to load teams")
     } finally {
       setIsLoading(false)
-    }
-  }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
-  const handleTeamSave = (teamData: any) => {
-    fetchTeams() // Refresh the teams list
+    }  }
+    const handleTeamSave = (team: Team) => {
+    // Update the teams list with the new/updated team
+    setTeams(prevTeams => {
+      const existingIndex = prevTeams.findIndex(t => t.id === team.id)
+      if (existingIndex >= 0) {
+        // Update existing team
+        const updatedTeams = [...prevTeams]
+        updatedTeams[existingIndex] = team
+        return updatedTeams
+      } else {
+        // Add new team
+        return [...prevTeams, team]
+      }
+    })
   }
 
   const getRoleColor = (role: string) => {

@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { KanbanColumn } from "./kanban-column"
 import { TaskCard } from "./task-card"
 import { TaskStatus } from "@prisma/client"
+import { TasksWithUsersAndTags } from "@/types/all-types"
 
 const columns = [
   { id: "PICKED", title: "Picked", color: "bg-blue-50 border-blue-200" },
@@ -20,41 +21,38 @@ const columns = [
 
 interface KanbanBoardProps {
   searchQuery: string  
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onTaskClick?: (task: any) => void
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tasks?: any[]
+  onTaskClick?: (task: TasksWithUsersAndTags) => void
+  tasks?: TasksWithUsersAndTags[]
   isLoading?: boolean
 }
 
 export function KanbanBoard({ searchQuery, onTaskClick, tasks: externalTasks, isLoading }: KanbanBoardProps) {
-  const [tasks, setTasks] = useState(externalTasks || [])
-  const [activeTask, setActiveTask] = useState<any | null>(null)
+  const [tasks, setTasks] = useState<TasksWithUsersAndTags[]>(externalTasks || [])
+  const [activeTask, setActiveTask] = useState<TasksWithUsersAndTags | null>(null)
   // Update tasks when external tasks change
   React.useEffect(() => {
     if (externalTasks) {
       setTasks(externalTasks)
     }
   }, [externalTasks])
-  
-  const sensors = useSensors(
+    const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 8,
       },
     })
   )
-  const filteredTasks = tasks.filter((task: any) => 
+  
+  const filteredTasks = tasks.filter((task: TasksWithUsersAndTags) => 
     task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    task.assignee?.name.toLowerCase().includes(searchQuery.toLowerCase())
+    (task.assignee?.name || '').toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   function handleDragStart(event: DragStartEvent) {
     const task = tasks.find(t => t.id === event.active.id)
     setActiveTask(task || null)
   }
-
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
     
@@ -63,7 +61,7 @@ export function KanbanBoard({ searchQuery, onTaskClick, tasks: externalTasks, is
     const taskId = active.id as string
     const newStatus = over.id as TaskStatus
 
-    setTasks((prev: any) => prev.map((task: any) => 
+    setTasks((prev: TasksWithUsersAndTags[]) => prev.map((task: TasksWithUsersAndTags) => 
       task.id === taskId 
         ? { ...task, status: newStatus }
         : task
@@ -71,8 +69,9 @@ export function KanbanBoard({ searchQuery, onTaskClick, tasks: externalTasks, is
 
     setActiveTask(null)
   }
+  
   const getTasksByStatus = (status: string) => {
-    return filteredTasks.filter((task: any) => task.status === status)
+    return filteredTasks.filter((task: TasksWithUsersAndTags) => task.status === status)
   }
 
   if (isLoading) {

@@ -7,4 +7,8 @@ export interface TasksWithUsersAndTags extends Task {
     epic?: Epic | null;
     sprint?: Sprint | null;
     team: Team;
+    _count?: {
+        comments?: number;
+        attachments?: number;
+    };
 }

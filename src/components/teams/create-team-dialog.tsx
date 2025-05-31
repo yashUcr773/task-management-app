@@ -60,14 +60,33 @@ interface Organization {
 interface CreateTeamDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  team?: any // For editing existing teams
-  onSave: (team: TeamFormValues) => void
+  team?: Team // For editing existing teams
+  onSave: (team: Team) => void
+}
+
+interface Team {
+  id: string
+  name: string
+  description?: string
+  organizationId: string
+  organization: {
+    id: string
+    name: string
+  }
+  members: Array<{
+    id: string
+    role: string
+    user: User
+  }>
+  _count: {
+    tasks: number
+  }
+  createdAt: string
+  updatedAt: string
 }
 
 export function CreateTeamDialog({ open, onOpenChange, team, onSave }: CreateTeamDialogProps) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [selectedMembers, setSelectedMembers] = useState<User[]>(team?.members?.map((m: any) => m.user) || [])
+  const [selectedMembers, setSelectedMembers] = useState<User[]>(team?.members?.map((m) => m.user) || [])
   const [isLoading, setIsLoading] = useState(false)
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [availableUsers, setAvailableUsers] = useState<User[]>([])

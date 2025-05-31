@@ -5,33 +5,14 @@ import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TaskCard } from "./task-card"
-
-interface Task {
-  id: string
-  title: string
-  description?: string
-  status: string
-  priority: "HIGH" | "MEDIUM" | "LOW"
-  storyPoints?: number
-  dueDate?: Date
-  assignee?: {
-    name: string
-    email: string
-    image?: string | null
-  }
-  tags?: Array<{ name: string; color: string }>
-  _count?: {
-    comments: number
-    attachments: number
-  }
-}
+import { TasksWithUsersAndTags } from "@/types/all-types"
 
 interface KanbanColumnProps {
   id: string
   title: string
   color: string
-  tasks: Task[]
-  onTaskClick?: (task: Task) => void
+  tasks: TasksWithUsersAndTags[]
+  onTaskClick?: (task: TasksWithUsersAndTags) => void
 }
 
 export function KanbanColumn({ id, title, color, tasks, onTaskClick }: KanbanColumnProps) {

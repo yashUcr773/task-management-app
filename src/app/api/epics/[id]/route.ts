@@ -27,7 +27,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
-        organizations: true
+        organizations: {
+          select: {
+            organizationId: true
+          }
+        }
       }
     })
 
@@ -35,8 +39,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-    const orgIds = user.organizations.map((om: any) => om.organizationId)
+    const orgIds = user.organizations.map((userOrg) => userOrg.organizationId)
 
     // Get epic with access control
     const epic = await prisma.epic.findFirst({
@@ -100,15 +103,19 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
-        organizations: true
+        organizations: {
+          select: {
+            organizationId: true
+          }
+        }
       }
     })
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-    const orgIds = user.organizations.map((om: any) => om.organizationId)
+    
+    const orgIds = user.organizations.map((userOrg) => userOrg.organizationId)
 
     // Check if epic exists and user has access
     const existingEpic = await prisma.epic.findFirst({
@@ -167,7 +174,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       include: {
-        organizations: true
+        organizations: {
+          select: {
+            organizationId: true
+          }
+        }
       }
     })
 
@@ -175,8 +186,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-    const orgIds = user.organizations.map((om: any) => om.organizationId)
+    const orgIds = user.organizations.map((userOrg) => userOrg.organizationId)
 
     // Check if epic exists and user has access
     const existingEpic = await prisma.epic.findFirst({

@@ -2,11 +2,48 @@
 "use client"
 
 import { toast } from "sonner"
+import { TasksWithUsersAndTags } from "@/types/all-types"
+
+// WebSocket-specific payload types
+interface TaskPayload extends TasksWithUsersAndTags {
+  _action?: 'created' | 'updated' | 'deleted'
+  organizationId?: string
+}
+
+interface CommentWithTask extends Comment {
+  taskId: string
+}
+
+interface Comment {
+  id: string
+  content: string
+  user: {
+    id: string
+    name: string
+    email: string
+    image?: string | null
+  }
+  createdAt: string
+}
+
+interface Notification {
+  id: string
+  type: string
+  title: string
+  message: string
+  userId: string
+  createdAt: string
+}
+
+interface UserEvent {
+  userId?: string
+  organizationId?: string
+  roomId?: string
+}
 
 export interface WebSocketMessage {
   type: 'task_updated' | 'task_created' | 'task_deleted' | 'comment_added' | 'notification_created' | 'user_joined' | 'user_left'
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  payload: any
+  payload: TaskPayload | CommentWithTask | Notification | UserEvent
   userId?: string
   organizationId?: string
   teamId?: string

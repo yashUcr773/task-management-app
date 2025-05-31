@@ -81,8 +81,20 @@ interface Sprint {
 interface CreateTaskDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  task?: any // For editing existing tasks
+  task?: {
+    id?: string
+    title?: string
+    description?: string
+    status?: string
+    priority?: string
+    storyPoints?: number
+    assigneeId?: string
+    epicId?: string
+    sprintId?: string
+    teamId?: string
+    dueDate?: string | Date
+    tags?: { name: string; color: string }[]
+  } // For editing existing tasks
   onSave: (task: TaskFormValues) => void
 }
 
@@ -141,16 +153,15 @@ export function CreateTaskDialog({ open, onOpenChange, task, onSave }: CreateTas
       fetchData()
     }
   }, [open])
-
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
     defaultValues: {
       title: task?.title || "",
       description: task?.description || "",
-      status: task?.status || "TODO",
-      priority: task?.priority || "MEDIUM",
+      status: (task?.status as "PICKED" | "TODO" | "IN_DEV" | "WITH_QA" | "READY" | "AWAITING_INPUTS" | "RELEASED") || "TODO",
+      priority: (task?.priority as "HIGH" | "MEDIUM" | "LOW") || "MEDIUM",
       storyPoints: task?.storyPoints || undefined,
-      dueDate: task?.dueDate || undefined,
+      dueDate: task?.dueDate ? (typeof task.dueDate === 'string' ? new Date(task.dueDate) : task.dueDate) : undefined,
       assigneeId: task?.assigneeId || "",
       epicId: task?.epicId || "",
       sprintId: task?.sprintId || "",

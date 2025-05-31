@@ -42,11 +42,9 @@ export async function GET(
             image: true
           }
         }
-      }
-    })    
+      }    })    
 
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-    const formattedMembers = members.map((member: any) => ({
+    const formattedMembers = members.map((member) => ({
       id: member.user.id,
       name: member.user.name,
       email: member.user.email,

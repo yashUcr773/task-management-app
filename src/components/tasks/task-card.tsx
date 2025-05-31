@@ -7,31 +7,12 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Calendar, MessageSquare, Paperclip } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
-
-interface Task {
-  id: string
-  title: string
-  description?: string
-  status: string
-  priority: "HIGH" | "MEDIUM" | "LOW"
-  storyPoints?: number
-  dueDate?: Date
-  assignee?: {
-    name: string
-    email: string
-    image?: string | null
-  }
-  tags?: Array<{ name: string; color: string }>
-  _count?: {
-    comments: number
-    attachments: number
-  }
-}
+import { TasksWithUsersAndTags } from "@/types/all-types"
 
 interface TaskCardProps {
-  task: Task
+  task: TasksWithUsersAndTags
   isDragging?: boolean
-  onClick?: (task: Task) => void
+  onClick?: (task: TasksWithUsersAndTags) => void
 }
 
 export function TaskCard({ task, isDragging, onClick }: TaskCardProps) {
@@ -115,16 +96,17 @@ export function TaskCard({ task, isDragging, onClick }: TaskCardProps) {
             <p className="text-xs text-muted-foreground line-clamp-2">
               {task.description}
             </p>
-          )}
-
-          {task.tags && task.tags.length > 0 && (
+          )}          {task.tags && task.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {task.tags.slice(0, 2).map((tag, index) => (
                 <Badge 
                   key={index} 
                   variant="outline" 
                   className="text-xs px-2 py-0"
-                  style={{ borderColor: tag.color, color: tag.color }}
+                  style={{ 
+                    borderColor: tag.color || "#ccc", 
+                    color: tag.color || "#666" 
+                  }}
                 >
                   {tag.name}
                 </Badge>
@@ -138,12 +120,11 @@ export function TaskCard({ task, isDragging, onClick }: TaskCardProps) {
           )}
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              {task.assignee && (
+            <div className="flex items-center space-x-2">              {task.assignee && (
                 <Avatar className="h-6 w-6">
                   <AvatarImage src={task.assignee.image || ""} />
                   <AvatarFallback className="text-xs">
-                    {task.assignee.name.slice(0, 2).toUpperCase()}
+                    {task.assignee.name?.slice(0, 2).toUpperCase() || "??"}
                   </AvatarFallback>
                 </Avatar>
               )}

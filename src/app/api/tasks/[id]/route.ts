@@ -49,20 +49,22 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Get the current user
     const user = await prisma.user.findUnique({
       where: { email: session.user.email }
-    })    
+    })
+    
     if (!user) {
       return NextResponse.json(
         { error: "User not found" },
         { status: 404 }
       )
-    }    // Get user's teams to check permissions
+    }
+
+    // Get user's teams to check permissions
     const userTeams = await prisma.teamMember.findMany({
       where: { userId: user.id },
       select: { teamId: true }
     })
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const teamIds = userTeams.map((team: any) => team.teamId)
+    const teamIds = userTeams.map((teamMember) => teamMember.teamId)
 
     // Get task with access control
     const task = await prisma.task.findFirst({
@@ -88,7 +90,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             email: true,
             image: true
           }
-        },        epic: true,
+        },
+        epic: true,
         sprint: true,
         tags: {
           include: {
@@ -186,14 +189,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         { error: "User not found" },
         { status: 404 }
       )
-    }    // Get user's teams to check permissions
+    }
+
+    // Get user's teams to check permissions
     const userTeams = await prisma.teamMember.findMany({
       where: { userId: user.id },
       select: { teamId: true }
     })
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const teamIds = userTeams.map((team: any) => team.teamId)
+    const teamIds = userTeams.map((teamMember) => teamMember.teamId)
 
     // Check if task exists and user has access
     const existingTask = await prisma.task.findFirst({
@@ -217,7 +221,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         { error: "Task not found" },
         { status: 404 }
       )
-    }    // Prepare update data
+    }
+
+    // Prepare update data
     const updateData: Record<string, unknown> = {}
     
     if (validatedData.title !== undefined) updateData.title = validatedData.title
@@ -230,8 +236,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
     if (validatedData.assigneeId !== undefined) updateData.assigneeId = validatedData.assigneeId || null
     if (validatedData.epicId !== undefined) updateData.epicId = validatedData.epicId || null
-    if (validatedData.sprintId !== undefined) updateData.sprintId = validatedData.sprintId || null    // Update the task
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    if (validatedData.sprintId !== undefined) updateData.sprintId = validatedData.sprintId || null
+
+    // Update the task
     const updatedTask = await prisma.task.update({
       where: { id },
       data: updateData,
@@ -265,7 +272,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
           }
         }
       }
-    })    // Handle tags if provided
+    })
+
+    console.log(updatedTask)
+
+    // Handle tags if provided
     if (validatedData.tags !== undefined) {
       // First, disconnect all existing tags
       await prisma.taskTag.deleteMany({
@@ -311,7 +322,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
     if (validatedData.assigneeId !== undefined && validatedData.assigneeId !== existingTask.assigneeId) {
       changes.push(`Assignee changed`)
-    }    if (changes.length > 0) {
+    }
+
+    if (changes.length > 0) {
       await prisma.activity.create({
         data: {
           type: "TASK_UPDATED",
@@ -324,7 +337,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
           })
         }
       })
-    }    // Fetch the complete updated task
+    }
+
+    // Fetch the complete updated task
     const completeTask = await prisma.task.findUnique({
       where: { id },
       include: {
@@ -411,14 +426,15 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         { error: "User not found" },
         { status: 404 }
       )
-    }    // Get user's teams to check permissions
+    }
+
+    // Get user's teams to check permissions
     const userTeams = await prisma.teamMember.findMany({
       where: { userId: user.id },
       select: { teamId: true }
     })
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const teamIds = userTeams.map((team: any) => team.teamId)
+    const teamIds = userTeams.map((teamMember) => teamMember.teamId)
 
     // Check if task exists and user has access
     const existingTask = await prisma.task.findFirst({
@@ -435,7 +451,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         { error: "Task not found" },
         { status: 404 }
       )
-    }    // Role-based access control for deletion
+    }
+
+    // Role-based access control for deletion
     // Allow: task creator, assignee, team members with admin role, organization admins
     const hasDeletePermission = existingTask.creatorId === user.id || 
                                 existingTask.assigneeId === user.id;
@@ -473,7 +491,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
           { status: 403 }
         )
       }
-    }// Create activity log before deletion
+    }
+
+    // Create activity log before deletion
     await prisma.activity.create({
       data: {
         type: "TASK_DELETED",

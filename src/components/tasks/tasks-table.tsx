@@ -22,11 +22,11 @@ import {
 import { MoreHorizontal, ArrowUpDown, MessageSquare, Paperclip } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
+import { TasksWithUsersAndTags } from "@/types/all-types"
 
 interface TasksTableProps {
   searchQuery: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tasks?: any[]
+  tasks?: TasksWithUsersAndTags[]
   isLoading?: boolean
 }
 
@@ -42,11 +42,10 @@ export function TasksTable({ searchQuery, tasks: externalTasks, isLoading }: Tas
       setTasks(externalTasks)
     }
   }, [externalTasks])
-
-  const filteredTasks = tasks.filter((task: any) => 
+  const filteredTasks = tasks.filter((task: TasksWithUsersAndTags) => 
     task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    task.assignee?.name.toLowerCase().includes(searchQuery.toLowerCase())
+    task.assignee?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
   const handleSort = (field: string) => {
@@ -171,7 +170,7 @@ export function TasksTable({ searchQuery, tasks: externalTasks, isLoading }: Tas
                   <TableCell><Skeleton className="h-8 w-8" /></TableCell>
                 </TableRow>
               ))            ) : (
-              filteredTasks.map((task: any) => (
+              filteredTasks.map((task: TasksWithUsersAndTags) => (
                 <TableRow key={task.id}>
                 <TableCell>
                   <Checkbox
@@ -203,9 +202,8 @@ export function TasksTable({ searchQuery, tasks: externalTasks, isLoading }: Tas
                   {task.assignee && (
                     <div className="flex items-center space-x-2">
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={task.assignee.image || ""} />
-                        <AvatarFallback className="text-xs">
-                          {task.assignee.name.slice(0, 2).toUpperCase()}
+                        <AvatarImage src={task.assignee.image || ""} />                        <AvatarFallback className="text-xs">
+                          {task.assignee.name?.slice(0, 2).toUpperCase() || "UN"}
                         </AvatarFallback>
                       </Avatar>
                       <span className="text-sm">{task.assignee.name}</span>
@@ -224,19 +222,17 @@ export function TasksTable({ searchQuery, tasks: externalTasks, isLoading }: Tas
                     <Badge variant="outline">{task.storyPoints}</Badge>
                   )}
                 </TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    {task.tags?.slice(0, 2).map((tag: any, index: number) => (
+                <TableCell>                  <div className="flex flex-wrap gap-1">
+                    {task.tags?.slice(0, 2).map((tag, index: number) => (
                       <Badge 
                         key={index} 
                         variant="outline" 
                         className="text-xs"
-                        style={{ borderColor: tag.color, color: tag.color }}
+                        style={{ borderColor: tag.color || '#ccc', color: tag.color || '#666' }}
                       >
                         {tag.name}
                       </Badge>
-                    ))}                    {task.tags && task.tags.length > 2 && (
+                    ))}{task.tags && task.tags.length > 2 && (
                       <Badge variant="outline" className="text-xs">
                         +{task.tags.length - 2}
                       </Badge>

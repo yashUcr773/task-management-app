@@ -32,7 +32,9 @@ export function useRealTimeTasks(options: UseRealTimeTasksOptions = {}) {
   const [tasks, setTasks] = useState<TasksWithUsersAndTags[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null)  // Fetch tasks from API with filters
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
+
+  // Fetch tasks from API with filters
   const fetchTasks = useCallback(async () => {
     setIsLoading(true)
     setError(null)
@@ -49,75 +51,87 @@ export function useRealTimeTasks(options: UseRealTimeTasksOptions = {}) {
         status.forEach(s => params.append('status', s))
       }
 
-      const response = await fetch(`/api/tasks?${params.toString()}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
+      const response = await fetch(`/api/tasks?${params.toString()}`)
       
       if (!response.ok) {
-        throw new Error('Failed to fetch tasks')
+        throw new Error(`Failed to fetch tasks: ${response.statusText}`)
       }
-      
-      const data = await response.json()
-      const fetchedTasks = data.tasks || []
 
-      setTasks(fetchedTasks)
+      const data = await response.json()
+      setTasks(data.tasks || [])
       setLastUpdate(new Date())
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch tasks')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch tasks'
+      setError(errorMessage)
       console.error('Error fetching tasks:', err)
-      // Fallback to empty array on error
-      setTasks([])
+      
+      if (showToasts) {
+        toast.error(errorMessage)
+      }
     } finally {
       setIsLoading(false)
     }
-  }, [organizationId, teamId, sprintId, epicId, assigneeId, status])  // Handle real-time task updates
-  const handleTaskUpdate = useCallback((updatedTask: TasksWithUsersAndTags) => {
+  }, [organizationId, teamId, sprintId, epicId, assigneeId, status, showToasts])
+
+  // Handle real-time task updates
+  const handleTaskUpdate = useCallback((updatedTask: TasksWithUsersAndTags & { _action?: string }) => {
     // Handle _action property when available from WebSocket messages
-    const action = (updatedTask as any)._action || 'updated'
+    const action = updatedTask._action || 'updated'
     
     setTasks(prevTasks => {
+      // Filter logic: check if the task matches current filter criteria
+      const matchesFilter = (task: TasksWithUsersAndTags) => {
+        // Check organizationId through team relationship
+        if (organizationId && task.team?.organizationId !== organizationId) return false
+        if (teamId && task.teamId !== teamId) return false
+        if (sprintId && task.sprintId !== sprintId) return false
+        if (epicId && task.epicId !== epicId) return false
+        if (assigneeId && task.assigneeId !== assigneeId) return false
+        if (status && status.length > 0 && !status.includes(task.status)) return false
+        return true
+      }
+
       switch (action) {
-        case 'created':          // Add new task if it matches our filters
-          const shouldInclude = (
-            (!organizationId || (updatedTask as any).organizationId === organizationId) &&
-            (!teamId || updatedTask.teamId === teamId) &&
-            (!sprintId || updatedTask.sprintId === sprintId) &&
-            (!epicId || updatedTask.epicId === epicId) &&
-            (!assigneeId || updatedTask.assigneeId === assigneeId) &&
-            (!status || status.length === 0 || status.includes(updatedTask.status))
-          )
-          
-          if (shouldInclude && !prevTasks.find(t => t.id === updatedTask.id)) {
-            if (showToasts) {
-              toast.success(`New task created: ${updatedTask.title}`)
+        case 'created':
+          // Add task if it matches current filters
+          if (matchesFilter(updatedTask)) {
+            // Check if task already exists to avoid duplicates
+            const exists = prevTasks.some(t => t.id === updatedTask.id)
+            if (!exists) {
+              if (showToasts) {
+                toast.success(`New task created: ${updatedTask.title}`)
+              }
+              return [updatedTask, ...prevTasks]
             }
-            return [...prevTasks, updatedTask]
           }
           return prevTasks
-
+          
         case 'updated':
-          const updatedTasks = prevTasks.map(task =>
-            task.id === updatedTask.id ? { ...updatedTask } : task
-          )
-          
-          if (showToasts) {
-            const existingTask = prevTasks.find(t => t.id === updatedTask.id)
-            if (existingTask) {
-              toast.info(`Task updated: ${updatedTask.title}`)
+          return prevTasks.map(task => {
+            if (task.id === updatedTask.id) {
+              // If task no longer matches filters, remove it
+              if (!matchesFilter(updatedTask)) {
+                if (showToasts) {
+                  toast.info(`Task moved out of current view: ${updatedTask.title}`)
+                }
+                return null
+              }
+              
+              if (showToasts && task.status !== updatedTask.status) {
+                toast.info(`Task status updated: ${updatedTask.title}`)
+              }
+              return updatedTask
             }
-          }
+            return task
+          }).filter(Boolean) as TasksWithUsersAndTags[]
           
-          return updatedTasks
-
         case 'deleted':
-          if (showToasts) {
-            toast.error(`Task deleted: ${updatedTask.title}`)
+          const taskExists = prevTasks.some(t => t.id === updatedTask.id)
+          if (taskExists && showToasts) {
+            toast.info(`Task deleted: ${updatedTask.title}`)
           }
           return prevTasks.filter(task => task.id !== updatedTask.id)
-
+          
         default:
           return prevTasks
       }
@@ -133,6 +147,7 @@ export function useRealTimeTasks(options: UseRealTimeTasksOptions = {}) {
   useEffect(() => {
     fetchTasks()
   }, [fetchTasks])
+
   // Computed values
   const taskStats = useMemo(() => {
     const total = tasks.length
@@ -150,15 +165,18 @@ export function useRealTimeTasks(options: UseRealTimeTasksOptions = {}) {
       completionRate: total > 0 ? Math.round((completed / total) * 100) : 0
     }
   }, [tasks])
+
   const tasksByStatus = useMemo(() => {
     return tasks.reduce((acc, task) => {
-      if (!acc[task.status]) {
-        acc[task.status] = []
+      const status = task.status
+      if (!acc[status]) {
+        acc[status] = []
       }
-      acc[task.status].push(task)
+      acc[status].push(task)
       return acc
     }, {} as Record<string, TasksWithUsersAndTags[]>)
   }, [tasks])
+
   const overdueTasks = useMemo(() => {
     const now = new Date()
     return tasks.filter(task => {
@@ -179,6 +197,7 @@ export function useRealTimeTasks(options: UseRealTimeTasksOptions = {}) {
   const getTasksByAssignee = useCallback((assigneeId: string) => {
     return tasks.filter(task => task.assigneeId === assigneeId)
   }, [tasks])
+
   const getTasksByTag = useCallback((tag: string) => {
     return tasks.filter(task => task.tags?.some(t => t.name === tag))
   }, [tasks])

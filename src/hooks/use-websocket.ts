@@ -59,24 +59,52 @@ export function useWebSocket(organizationId?: string) {
   }
 }
 
+import { TasksWithUsersAndTags } from "@/types/all-types"
+
+interface Comment {
+  id: string
+  content: string
+  user: {
+    id: string
+    name: string
+    email: string
+    image?: string | null
+  }
+  createdAt: string
+}
+
+interface Notification {
+  id: string
+  type: string
+  title: string
+  message: string
+  userId: string
+  createdAt: string
+}
+
+interface UserEvent {
+  userId?: string
+  organizationId?: string
+  roomId?: string
+}
+
 // Specific hooks for different features
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function useTaskUpdates(onTaskUpdate?: (task: any) => void) {
+export function useTaskUpdates(onTaskUpdate?: (task: TasksWithUsersAndTags & { _action?: string }) => void) {
   const { subscribe } = useWebSocket()
 
   useEffect(() => {
     if (!onTaskUpdate) return
 
     const unsubscribeCreated = subscribe('task_created', (message) => {
-      onTaskUpdate({ ...message.payload, _action: 'created' })
+      onTaskUpdate({ ...(message.payload as TasksWithUsersAndTags), _action: 'created' })
     })
 
     const unsubscribeUpdated = subscribe('task_updated', (message) => {
-      onTaskUpdate({ ...message.payload, _action: 'updated' })
+      onTaskUpdate({ ...(message.payload as TasksWithUsersAndTags), _action: 'updated' })
     })
 
     const unsubscribeDeleted = subscribe('task_deleted', (message) => {
-      onTaskUpdate({ ...message.payload, _action: 'deleted' })
+      onTaskUpdate({ ...(message.payload as TasksWithUsersAndTags), _action: 'deleted' })
     })
 
     return () => {
@@ -87,16 +115,15 @@ export function useTaskUpdates(onTaskUpdate?: (task: any) => void) {
   }, [subscribe, onTaskUpdate])
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function useCommentUpdates(taskId: string, onCommentUpdate?: (comment: any) => void) {
+export function useCommentUpdates(taskId: string, onCommentUpdate?: (comment: Comment) => void) {
   const { subscribe } = useWebSocket()
-
   useEffect(() => {
     if (!onCommentUpdate) return
 
     const unsubscribe = subscribe('comment_added', (message) => {
-      if (message.payload.taskId === taskId) {
-        onCommentUpdate(message.payload)
+      const comment = message.payload as Comment
+      if ('taskId' in message.payload && (message.payload as Comment & { taskId: string }).taskId === taskId) {
+        onCommentUpdate(comment)
       }
     })
 
@@ -104,15 +131,14 @@ export function useCommentUpdates(taskId: string, onCommentUpdate?: (comment: an
   }, [subscribe, taskId, onCommentUpdate])
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function useNotificationUpdates(onNotificationUpdate?: (notification: any) => void) {
+export function useNotificationUpdates(onNotificationUpdate?: (notification: Notification) => void) {
   const { subscribe } = useWebSocket()
 
   useEffect(() => {
     if (!onNotificationUpdate) return
 
     const unsubscribe = subscribe('notification_created', (message) => {
-      onNotificationUpdate(message.payload)
+      onNotificationUpdate(message.payload as Notification)
     })
 
     return unsubscribe
@@ -125,11 +151,17 @@ export function usePresence() {
 
   useEffect(() => {
     const unsubscribeJoined = subscribe('user_joined', (message) => {
-      setOnlineUsers(prev => [...prev.filter(id => id !== message.payload.userId), message.payload.userId])
+      const userEvent = message.payload as UserEvent
+      if (userEvent.userId) {
+        setOnlineUsers(prev => [...prev.filter(id => id !== userEvent.userId), userEvent.userId!])
+      }
     })
 
     const unsubscribeLeft = subscribe('user_left', (message) => {
-      setOnlineUsers(prev => prev.filter(id => id !== message.payload.userId))
+      const userEvent = message.payload as UserEvent
+      if (userEvent.userId) {
+        setOnlineUsers(prev => prev.filter(id => id !== userEvent.userId))
+      }
     })
 
     return () => {
