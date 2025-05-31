@@ -17,11 +17,13 @@ import { signOut } from "next-auth/react"
 import { 
   LayoutDashboard, 
   CheckSquare, 
-  Calendar,   Users, 
+  Calendar,   
+  Users, 
   Settings,
   Plus,
   Target,
-  Timer
+  Timer,
+  Building2
 } from "lucide-react"
 import { NotificationsDropdown } from "@/components/notifications/notifications-dropdown"
 
@@ -29,6 +31,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Tasks', href: '/tasks', icon: CheckSquare },
   { name: 'Calendar', href: '/calendar', icon: Calendar },
+  { name: 'Organizations', href: '/organizations', icon: Building2 },
   { name: 'Teams', href: '/teams', icon: Users },
   { name: 'Epics', href: '/epics', icon: Target },
   { name: 'Sprints', href: '/sprints', icon: Timer },
