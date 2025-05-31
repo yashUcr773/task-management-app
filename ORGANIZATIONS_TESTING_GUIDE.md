@@ -170,6 +170,10 @@ enum Role {
    - All files should compile without errors
    - Role enum should use ADMIN, USER, VIEWER (not MODERATOR)
 
+5. **Organization creation errors**
+   - ✅ **FIXED**: Description field validation now properly handles empty/null values
+   - The API now accepts optional descriptions without throwing validation errors
+
 ### Next Steps
 
 After testing the basic functionality, you can:

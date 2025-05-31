@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -18,7 +19,8 @@ import {
   MoreVertical,
   Copy,
   LogOut,
-  Edit
+  Edit,
+  ChevronLeft
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -68,6 +70,7 @@ interface Organization {
 }
 
 export function OrganizationsView() {
+  const router = useRouter()
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -165,14 +168,23 @@ export function OrganizationsView() {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      {/* Header */}
+    <div className="container mx-auto py-6 space-y-6">      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Organizations</h1>
-          <p className="text-muted-foreground">
-            Manage your organizations and collaborate with teams
-          </p>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.back()}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Organizations</h1>
+            <p className="text-muted-foreground">
+              Manage your organizations and collaborate with teams
+            </p>
+          </div>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setShowJoinDialog(true)} variant="outline">

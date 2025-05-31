@@ -55,20 +55,20 @@ export function EditOrganizationDialog({
     if (!name.trim()) {
       toast.error("Organization name is required")
       return
-    }
-
-    try {
+    }    try {
       setLoading(true)
+      
+      const requestBody = {
+        name: name.trim(),
+        ...(description.trim() && { description: description.trim() }),
+      }
       
       const response = await fetch(`/api/organizations/${organization.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: name.trim(),
-          description: description.trim() || null,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       if (!response.ok) {

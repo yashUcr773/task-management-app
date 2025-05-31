@@ -6,7 +6,7 @@ import { z } from "zod"
 
 const createOrganizationSchema = z.object({
   name: z.string().min(1).max(100),
-  description: z.string().optional(),
+  description: z.string().optional().nullable().transform(val => val || undefined),
 })
 
 export async function POST(request: NextRequest) {
