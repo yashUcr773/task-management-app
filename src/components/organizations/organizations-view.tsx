@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -20,7 +19,6 @@ import {
   Copy,
   LogOut,
   Edit,
-  ChevronLeft
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -70,7 +68,6 @@ interface Organization {
 }
 
 export function OrganizationsView() {
-  const router = useRouter()
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")

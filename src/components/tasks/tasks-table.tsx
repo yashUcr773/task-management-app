@@ -23,6 +23,8 @@ import { MoreHorizontal, ArrowUpDown, MessageSquare, Paperclip } from "lucide-re
 import { formatDistanceToNow } from "date-fns"
 import { Skeleton } from "@/components/ui/skeleton"
 import { TasksWithUsersAndTags } from "@/types/all-types"
+import { toast } from "sonner"
+import { TaskDialog } from "./task-dialog"
 
 interface TasksTableProps {
   searchQuery: string
@@ -35,6 +37,8 @@ export function TasksTable({ searchQuery, tasks: externalTasks, isLoading }: Tas
   const [selectedTasks, setSelectedTasks] = useState<string[]>([])
   const [sortField, setSortField] = useState<string>("")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const [editingTask, setEditingTask] = useState<TasksWithUsersAndTags | null>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
   // Update tasks when external tasks change
   useEffect(() => {
@@ -100,6 +104,114 @@ export function TasksTable({ searchQuery, tasks: externalTasks, isLoading }: Tas
         : filteredTasks.map(task => task.id)
     )
   }
+
+  // Bulk operations handlers
+  const handleBulkEdit = () => {
+    toast.info(`Bulk edit feature coming soon for ${selectedTasks.length} tasks`)
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedTasks.length === 0) return
+    
+    try {
+      const response = await fetch('/api/tasks/bulk-delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ taskIds: selectedTasks }),
+      })
+
+      if (response.ok) {
+        toast.success(`Successfully deleted ${selectedTasks.length} tasks`)
+        setSelectedTasks([])
+        // Refresh tasks by removing deleted ones
+        setTasks(prev => prev.filter(task => !selectedTasks.includes(task.id)))
+      } else {
+        throw new Error('Failed to delete tasks')
+      }
+    } catch (error) {
+      console.log("🚀 ~ handleBulkDelete ~ error:", error)
+      toast.error('Failed to delete selected tasks')
+    }
+  }
+  // Individual task operations
+  const handleEditTask = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId)
+    if (task) {
+      setEditingTask(task)
+      setIsEditDialogOpen(true)
+    }
+  }
+
+  const handleTaskUpdated = (updatedTask: TasksWithUsersAndTags) => {
+    setTasks(prev => prev.map(task => 
+      task.id === updatedTask.id ? updatedTask : task
+    ))
+    setEditingTask(null)
+  }
+
+  const handleDuplicateTask = async (taskId: string) => {
+    try {
+      const response = await fetch(`/api/tasks/${taskId}/duplicate`, {
+        method: 'POST',
+      })
+
+      if (response.ok) {
+        const duplicatedTask = await response.json()
+        toast.success('Task duplicated successfully')
+        // Add the new task to the list
+        setTasks(prev => [duplicatedTask.task, ...prev])
+      } else {
+        throw new Error('Failed to duplicate task')
+      }
+    } catch (error) {
+      console.log("🚀 ~ handleDuplicateTask ~ error:", error)
+      toast.error('Failed to duplicate task')
+    }
+  }
+
+  const handleArchiveTask = async (taskId: string) => {
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ archived: true }),
+      })
+
+      if (response.ok) {
+        toast.success('Task archived successfully')
+        // Remove from current view
+        setTasks(prev => prev.filter(task => task.id !== taskId))
+      } else {
+        throw new Error('Failed to archive task')
+      }
+    } catch (error) {
+      console.log("🚀 ~ handleArchiveTask ~ error:", error)
+      toast.error('Failed to archive task')
+    }
+  }
+
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        toast.success('Task deleted successfully')
+        // Remove from current view
+        setTasks(prev => prev.filter(task => task.id !== taskId))
+      } else {
+        throw new Error('Failed to delete task')
+      }
+    } catch (error) {
+      console.log("🚀 ~ handleDeleteTask ~ error:", error)
+      toast.error('Failed to delete task')
+    }
+  }
   return (
     <div className="space-y-4">
       {selectedTasks.length > 0 && (
@@ -107,10 +219,10 @@ export function TasksTable({ searchQuery, tasks: externalTasks, isLoading }: Tas
           <span className="text-sm text-muted-foreground">
             {selectedTasks.length} task(s) selected
           </span>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleBulkEdit}>
             Bulk Edit
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleBulkDelete}>
             Delete
           </Button>
         </div>
@@ -258,10 +370,10 @@ export function TasksTable({ searchQuery, tasks: externalTasks, isLoading }: Tas
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>Edit</DropdownMenuItem>
-                      <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                      <DropdownMenuItem>Archive</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
+                      <DropdownMenuItem onClick={() => handleEditTask(task.id)}>Edit</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDuplicateTask(task.id)}>Duplicate</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleArchiveTask(task.id)}>Archive</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDeleteTask(task.id)} className="text-destructive">
                         Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -269,9 +381,18 @@ export function TasksTable({ searchQuery, tasks: externalTasks, isLoading }: Tas
               </TableRow>
               ))
             )}
-          </TableBody>
-        </Table>
+          </TableBody>        </Table>
       </div>
+        {/* Edit Task Dialog */}
+      {editingTask && (
+        <TaskDialog
+          mode="edit"
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          task={editingTask}
+          onTaskUpdated={handleTaskUpdated}
+        />
+      )}
     </div>
   )
 }

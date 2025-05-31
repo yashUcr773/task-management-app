@@ -31,7 +31,7 @@ export function KanbanColumn({ id, title, color, tasks, onTaskClick }: KanbanCol
             </Badge>
           </div>
         </CardHeader>
-        <CardContent className="pt-0">
+        <CardContent className="pt-0  h-96 overflow-y-auto">
           <div
             ref={setNodeRef}
             className="space-y-3 min-h-[200px]"

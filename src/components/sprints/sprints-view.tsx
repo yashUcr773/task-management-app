@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -16,7 +15,6 @@ import {
   Play,
   Pause,
   Users,
-  ChevronLeft
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -49,7 +47,6 @@ interface Sprint {
 }
 
 export function SprintsView() {
-  const router = useRouter()
   const [sprints, setSprints] = useState<Sprint[]>([])
   const [loading, setLoading] = useState(true)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)

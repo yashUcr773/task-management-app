@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
@@ -24,7 +23,6 @@ import {
   Moon,
   Sun,
   Monitor,
-  ChevronLeft
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -47,7 +45,6 @@ interface SettingsState {
 }
 
 export function SettingsView() {
-  const router = useRouter()
   const [settings, setSettings] = useState<SettingsState>({
     appearance: {
       theme: 'system',

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -14,7 +13,6 @@ import {
   MoreHorizontal,
   Calendar,
   CheckSquare,
-  ChevronLeft
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -50,7 +48,6 @@ interface Team {
 }
 
 export function TeamsView() {
-  const router = useRouter()
   const [createTeamOpen, setCreateTeamOpen] = useState(false)
   const [teams, setTeams] = useState<Team[]>([])
   const [isLoading, setIsLoading] = useState(true)

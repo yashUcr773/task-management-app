@@ -7,14 +7,14 @@ import { z } from "zod"
 const createTaskSchema = z.object({
   title: z.string().min(1).max(100),
   description: z.string().optional(),
-  status: z.enum(["PICKED", "TODO", "IN_DEV", "WITH_QA", "READY", "AWAITING_INPUTS", "RELEASED"]),
-  priority: z.enum(["HIGH", "MEDIUM", "LOW"]),
-  storyPoints: z.number().min(0).max(100).optional(),
-  dueDate: z.string().optional(), // ISO date string
-  assigneeId: z.string().optional(),
+  status: z.enum(["PICKED", "TODO", "IN_DEV", "WITH_QA", "READY", "AWAITING_INPUTS", "RELEASED"]).optional(),
+  priority: z.enum(["HIGH", "MEDIUM", "LOW"]).optional(),
+  storyPoints: z.number().min(0).max(100).optional().nullable(),
+  dueDate: z.string().optional().nullable(), // ISO date string
+  assigneeId: z.string().optional().nullable(),
   teamId: z.string().optional(),
-  epicId: z.string().optional(),
-  sprintId: z.string().optional(),
+  epicId: z.string().optional().nullable(),
+  sprintId: z.string().optional().nullable(),
   tags: z.array(z.object({
     name: z.string(),
     color: z.string()
@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    console.log("🚀 ~ POST ~ body:", body)
     const validatedData = createTaskSchema.parse(body)
 
     // Get the current user

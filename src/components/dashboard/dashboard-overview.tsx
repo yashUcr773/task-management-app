@@ -10,7 +10,6 @@ import {
   AlertCircle, 
   Users, 
   Calendar,
-  Plus,
   ArrowRight
 } from "lucide-react"
 import Link from "next/link"
@@ -76,32 +75,29 @@ export function DashboardOverview() {
   
   // Calculate dynamic stats
   const getDynamicStats = () => {
-    const now = new Date()
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-    const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    const oneWeekAgo = new Date()
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
     
-    // Tasks created this week vs last week
-    const thisWeekTasks = tasks.filter(task => 
-      new Date(task.createdAt) >= weekAgo
-    ).length
+    // Tasks created this week
+    const thisWeekTasks = tasks.filter(task =>
+      new Date(task.createdAt) >= oneWeekAgo
+    )
     
-    // Tasks moved to IN_DEV yesterday
-    const yesterdayInProgressTasks = tasks.filter(task => 
-      task.status === 'IN_DEV' && 
-      task.updatedAt && 
-      new Date(task.updatedAt) >= yesterday
-    ).length
+    // Tasks in progress change (comparing to yesterday)
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yesterdayInProgressTasks = tasks.filter(task =>
+      task.status === 'IN_DEV' && new Date(task.updatedAt) >= yesterday
+    )
     
     // Tasks completed this week
-    const thisWeekCompleted = tasks.filter(task => 
-      task.status === 'RELEASED' && 
-      task.updatedAt && 
-      new Date(task.updatedAt) >= weekAgo
+    const thisWeekCompleted = tasks.filter(task =>
+      task.status === 'RELEASED' && new Date(task.updatedAt) >= oneWeekAgo
     ).length
     
     return {
-      newTasksThisWeek: thisWeekTasks,
-      inProgressYesterday: yesterdayInProgressTasks,
+      newTasksThisWeek: thisWeekTasks.length,
+      inProgressChange: yesterdayInProgressTasks.length,
       completedThisWeek: thisWeekCompleted
     }
   }
@@ -120,7 +116,8 @@ export function DashboardOverview() {
     .slice(0, 5)
   return (
     <div className="container mx-auto py-6 space-y-6">
-      {/* Header */}      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{getGreeting()}</h1>
           <p className="text-muted-foreground">Here&apos;s what&apos;s happening with your projects today.</p>
@@ -133,11 +130,12 @@ export function DashboardOverview() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
             <CheckSquare className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>          <CardContent>
+          </CardHeader>
+          <CardContent>
             <div className="text-2xl font-bold">{taskStats.total}</div>
             <p className="text-xs text-muted-foreground">
               {dynamicStats.newTasksThisWeek > 0 
-                ? `+${dynamicStats.newTasksThisWeek} this week`
+                ? `+${dynamicStats.newTasksThisWeek} new this week`
                 : 'No new tasks this week'
               }
             </p>
@@ -147,13 +145,14 @@ export function DashboardOverview() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>          <CardContent>
+            <Clock className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
             <div className="text-2xl font-bold">{taskStats.inProgress}</div>
             <p className="text-xs text-muted-foreground">
-              {dynamicStats.inProgressYesterday > 0 
-                ? `+${dynamicStats.inProgressYesterday} since yesterday`
-                : 'No new progress yesterday'
+              {dynamicStats.inProgressChange > 0 
+                ? `+${dynamicStats.inProgressChange} since yesterday`
+                : 'No recent changes'
               }
             </p>
           </CardContent>
@@ -162,11 +161,15 @@ export function DashboardOverview() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Overdue</CardTitle>
-            <AlertCircle className="h-4 w-4 text-destructive" />
-          </CardHeader>          <CardContent>
-            <div className="text-2xl font-bold text-destructive">{overdueTasks.length}</div>
+            <AlertCircle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{overdueTasks.length}</div>
             <p className="text-xs text-muted-foreground">
-              {overdueTasks.length > 0 ? 'Needs attention' : 'All tasks on track'}
+              {overdueTasks.length > 0 
+                ? 'Requires attention'
+                : 'All tasks on track'
+              }
             </p>
           </CardContent>
         </Card>
@@ -175,7 +178,8 @@ export function DashboardOverview() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Completed</CardTitle>
             <CheckSquare className="h-4 w-4 text-green-600" />
-          </CardHeader>          <CardContent>
+          </CardHeader>
+          <CardContent>
             <div className="text-2xl font-bold">{taskStats.completed}</div>
             <p className="text-xs text-muted-foreground">
               {dynamicStats.completedThisWeek > 0 
@@ -190,8 +194,10 @@ export function DashboardOverview() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Team Members</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>          <CardContent>
-            <div className="text-2xl font-bold">{teamStats.totalMembers}</div>            <p className="text-xs text-muted-foreground">
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{teamStats.totalMembers}</div>
+            <p className="text-xs text-muted-foreground">
               {teamStats.totalTeams === 1 
                 ? `Across ${teamStats.totalTeams} team`
                 : `Across ${teamStats.totalTeams} teams`
@@ -217,7 +223,8 @@ export function DashboardOverview() {
                 </Link>
               </Button>
             </div>
-          </CardHeader>          <CardContent className="space-y-4">
+          </CardHeader>
+          <CardContent className="space-y-4">
             {recentTasks.length > 0 ? recentTasks.map((task) => (
               <div key={task.id} className="flex items-center space-x-4">
                 <Avatar className="h-8 w-8">
@@ -261,7 +268,8 @@ export function DashboardOverview() {
                 </Link>
               </Button>
             </div>
-          </CardHeader>          <CardContent className="space-y-4">
+          </CardHeader>
+          <CardContent className="space-y-4">
             {upcomingDeadlines.length > 0 ? upcomingDeadlines.map((task) => (
               <div key={task.id} className="flex items-center justify-between">
                 <div>
@@ -280,34 +288,6 @@ export function DashboardOverview() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Common tasks and shortcuts</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-4">
-            <Button variant="outline" className="h-20 flex-col">
-              <Plus className="h-5 w-5 mb-2" />
-              Create Task
-            </Button>
-            <Button variant="outline" className="h-20 flex-col">
-              <Users className="h-5 w-5 mb-2" />
-              Invite Team
-            </Button>
-            <Button variant="outline" className="h-20 flex-col">
-              <Calendar className="h-5 w-5 mb-2" />
-              Schedule Meeting
-            </Button>
-            <Button variant="outline" className="h-20 flex-col">
-              <CheckSquare className="h-5 w-5 mb-2" />
-              View Reports
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

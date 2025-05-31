@@ -20,7 +20,6 @@ import {
   Calendar,   
   Users, 
   Settings,
-  Plus,
   Target,
   Timer,
   Building2

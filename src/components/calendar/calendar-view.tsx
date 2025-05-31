@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { ChevronLeft, RefreshCw } from "lucide-react"
+import { RefreshCw } from "lucide-react"
 import { TasksCalendar } from "@/components/tasks/tasks-calendar"
 import { TasksWithUsersAndTags } from "@/types/all-types"
 import { toast } from "sonner"

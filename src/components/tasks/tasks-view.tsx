@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
@@ -9,7 +8,7 @@ import { KanbanBoard } from "@/components/tasks/kanban-board"
 import { TasksTable } from "@/components/tasks/tasks-table"
 import { TasksList } from "@/components/tasks/tasks-list"
 import {TasksCalendar} from "@/components/tasks/tasks-calendar"
-import { CreateTaskDialog } from "@/components/tasks/create-task-dialog"
+import { TaskDialog } from "@/components/tasks/task-dialog"
 import { TaskDetailsModal } from "@/components/tasks/task-details-modal"
 import { useRealTimeTasks } from "@/hooks/use-real-time-tasks"
 import { useWebSocket } from "@/hooks/use-websocket"
@@ -26,13 +25,11 @@ import {
   WifiOff,
   RefreshCw,
   AlertCircle,
-  ChevronLeft
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 
 export function TasksView() {
-  const router = useRouter()
   const [createTaskOpen, setCreateTaskOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
@@ -56,47 +53,8 @@ export function TasksView() {
   })
   // WebSocket connection status
   const { isConnected } = useWebSocket()
-    const handleTaskSave = async (taskData: {
-    title: string;
-    description?: string;
-    status: string;
-    priority: string;
-    storyPoints?: number;
-    dueDate?: Date;
-    assigneeId?: string;
-    epicId?: string;
-    sprintId?: string;
-    tags?: Array<{ name: string; color: string }>;
-  }) => {
+    const handleTaskSave = async () => {
     try {
-      const response = await fetch('/api/tasks', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: taskData.title,
-          description: taskData.description,
-          status: taskData.status,
-          priority: taskData.priority,
-          storyPoints: taskData.storyPoints,
-          dueDate: taskData.dueDate?.toISOString(),
-          assigneeId: taskData.assigneeId,
-          epicId: taskData.epicId,
-          sprintId: taskData.sprintId,
-          tags: taskData.tags || [],
-        }),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to create task')
-      }
-
-      toast.success("Task created successfully!")
-      setCreateTaskOpen(false)
-      
       // Refresh tasks to show the new one
       refreshTasks()
     } catch (error) {
@@ -224,8 +182,7 @@ export function TasksView() {
       )}
 
       {/* View Tabs */}
-      <Tabs defaultValue="kanban" className="space-y-4">
-        <TabsList>
+      <Tabs defaultValue="kanban" className="space-y-4">        <TabsList>
           <TabsTrigger value="kanban" className="flex items-center space-x-2">
             <LayoutGrid className="h-4 w-4" />
             <span>Kanban</span>
@@ -255,19 +212,17 @@ export function TasksView() {
             tasks={filteredTasks}
             isLoading={isLoading}
           />
-        </TabsContent>
-
-        <TabsContent value="list" className="space-y-4">
+        </TabsContent>        <TabsContent value="list" className="space-y-4">
           <TasksList 
             searchQuery={searchQuery}
             tasks={filteredTasks}
             isLoading={isLoading}
           />
-        </TabsContent>        
-      </Tabs>
-
+        </TabsContent>
+      </Tabs>      
       {/* Dialogs */}
-      <CreateTaskDialog 
+      <TaskDialog 
+        mode="create"
         open={createTaskOpen} 
         onOpenChange={setCreateTaskOpen}
         onSave={handleTaskSave}

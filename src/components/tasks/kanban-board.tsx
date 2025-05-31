@@ -10,12 +10,12 @@ import { TaskStatus } from "@prisma/client"
 import { TasksWithUsersAndTags } from "@/types/all-types"
 
 const columns = [
-  { id: "PICKED", title: "Picked", color: "bg-blue-50 border-blue-200" },
   { id: "TODO", title: "To Do", color: "bg-gray-50 border-gray-200" },
+  { id: "PICKED", title: "Picked", color: "bg-blue-50 border-blue-200" },
   { id: "IN_DEV", title: "In Development", color: "bg-yellow-50 border-yellow-200" },
   { id: "WITH_QA", title: "With QA", color: "bg-purple-50 border-purple-200" },
-  { id: "READY", title: "Ready", color: "bg-green-50 border-green-200" },
   { id: "AWAITING_INPUTS", title: "Awaiting Inputs", color: "bg-orange-50 border-orange-200" },
+  { id: "READY", title: "Ready", color: "bg-green-50 border-green-200" },
   { id: "RELEASED", title: "Released", color: "bg-emerald-50 border-emerald-200" }
 ]
 

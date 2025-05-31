@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -14,7 +13,6 @@ import {
   MoreHorizontal,
   Edit,
   Trash,
-  ChevronLeft
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -41,7 +39,6 @@ interface Epic {
 }
 
 export function EpicsView() {
-  const router = useRouter()
   const [epics, setEpics] = useState<Epic[]>([])
   const [loading, setLoading] = useState(true)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
