@@ -126,7 +126,6 @@ export function TaskDialog({
     { name: "Feature", color: "#8b5cf6" },
     { name: "Documentation", color: "#f59e0b" },
   ])
-
   const isEditing = mode === "edit"
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskFormSchema),
@@ -143,12 +142,26 @@ export function TaskDialog({
       tags: [],
     },
   })
-  // Reset form when task changes or dialog opens
+
+  // Function to fetch task attachments
+  const fetchTaskAttachments = async (taskId: string) => {
+    try {
+      const response = await fetch(`/api/tasks/${taskId}/attachments`)
+      if (response.ok) {
+        const attachmentsData = await response.json()
+        setAttachments(attachmentsData || [])
+      } else {
+        setAttachments([])
+      }
+    } catch (error) {
+      console.error('Failed to fetch task attachments:', error)
+      setAttachments([])
+    }
+  }// Reset form when task changes or dialog opens
   useEffect(() => {
     if (open) {
       setActiveTab("details")
       setCreatedTaskId(null)
-      setAttachments([])
       
       if (isEditing && task) {
         const taskTags = task.tags?.map(t => ({
@@ -157,7 +170,7 @@ export function TaskDialog({
         })) || []
         
         setSelectedTags(taskTags)
-          form.reset({
+        form.reset({
           title: task.title,
           description: task.description || "",
           status: task.status as TaskStatus,
@@ -168,9 +181,14 @@ export function TaskDialog({
           epicId: task.epicId || "no-epic",
           sprintId: task.sprintId || "no-sprint",
           tags: taskTags,
-        })      } else {
+        })
+        
+        // Load existing attachments for edit mode
+        fetchTaskAttachments(task.id)
+      } else {
         // Reset for create mode
         setSelectedTags([])
+        setAttachments([])
         form.reset({
           title: "",
           description: "",
@@ -221,6 +239,13 @@ export function TaskDialog({
       fetchData()
     }
   }, [open])
+
+  // Refresh attachments when switching to attachments tab in edit mode
+  useEffect(() => {
+    if (activeTab === "attachments" && isEditing && task?.id && open) {
+      fetchTaskAttachments(task.id)
+    }
+  }, [activeTab, isEditing, task?.id, open])
 
   const onSubmit = async (data: TaskFormValues) => {
     setIsLoading(true)

@@ -31,8 +31,9 @@ import { toast } from "sonner"
 export function TasksView() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  
-  const [createTaskOpen, setCreateTaskOpen] = useState(false)
+    const [createTaskOpen, setCreateTaskOpen] = useState(false)
+  const [editTaskOpen, setEditTaskOpen] = useState(false)
+  const [editingTask, setEditingTask] = useState<TasksWithUsersAndTags | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [taskDetailsOpen, setTaskDetailsOpen] = useState(false)
@@ -93,6 +94,7 @@ export function TasksView() {
   }
   
   const filteredTasks = getFilteredTasks()
+  
   const handleTaskSave = async () => {
     try {
       // For create mode, just refresh tasks since TaskDialog already created the task
@@ -103,9 +105,10 @@ export function TasksView() {
       toast.error(error instanceof Error ? error.message : 'Failed to refresh tasks')
     }
   }
+  
   const handleTaskClick = (task: TasksWithUsersAndTags) => {
-    setSelectedTaskId(task.id)
-    setTaskDetailsOpen(true)
+    setEditingTask(task)
+    setEditTaskOpen(true)
   }
 
   const handleRefresh = () => {
@@ -279,13 +282,24 @@ export function TasksView() {
             isLoading={isLoading}
           />
         </TabsContent>
-      </Tabs>      
-      {/* Dialogs */}
+      </Tabs>        {/* Dialogs */}
       <TaskDialog 
         mode="create"
         open={createTaskOpen} 
         onOpenChange={setCreateTaskOpen}
         onSave={handleTaskSave}
+      />
+
+      <TaskDialog 
+        mode="edit"
+        open={editTaskOpen} 
+        onOpenChange={setEditTaskOpen}
+        task={editingTask}
+        onTaskUpdated={() => {
+          refreshTasks()
+          setEditTaskOpen(false)
+          setEditingTask(null)
+        }}
       />
 
       <TaskDetailsModal

@@ -14,8 +14,10 @@ import {
   X
 } from "lucide-react"
 import Link from "next/link"
+import { TaskDialog } from "@/components/tasks/task-dialog"
 import { useRealTimeTasks } from "@/hooks/use-real-time-tasks"
 import { useEffect, useState } from "react"
+import { TasksWithUsersAndTags } from "@/types/all-types"
 
 interface TeamStats {
   totalMembers: number
@@ -37,8 +39,11 @@ type TaskFilter = 'all' | 'in-progress' | 'overdue' | 'completed' | null
 
 export function DashboardOverview() {
   const { tasks, taskStats, overdueTasks } = useRealTimeTasks()
+  console.log("🚀 ~ DashboardOverview ~ tasks:", tasks)
   const [teamStats, setTeamStats] = useState<TeamStats>({ totalMembers: 0, totalTeams: 0 })
   const [selectedFilter, setSelectedFilter] = useState<TaskFilter>(null)
+  const [editTaskOpen, setEditTaskOpen] = useState(false)
+  const [editingTask, setEditingTask] = useState<TasksWithUsersAndTags | null>(null)
 
   // Get greeting based on time of day
   const getGreeting = () => {
@@ -132,9 +137,14 @@ export function DashboardOverview() {
       const dueDate = new Date(task.dueDate)
       const sevenDaysFromNow = new Date()
       sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7)
-      return dueDate <= sevenDaysFromNow && dueDate >= new Date()
-    })
+      return dueDate <= sevenDaysFromNow && dueDate >= new Date()    })
     .slice(0, 5)
+
+  const handleTaskClick = (task: TasksWithUsersAndTags) => {
+    setEditingTask(task)
+    setEditTaskOpen(true)
+  }
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
@@ -282,9 +292,12 @@ export function DashboardOverview() {
           </CardHeader>
           <CardContent>
             {filteredTasks.length > 0 ? (
-              <div className="space-y-3">
-                {filteredTasks.slice(0, 10).map((task) => (
-                  <Link key={task.id} href={`/tasks?id=${task.id}`} className="block">
+              <div className="space-y-3">                {filteredTasks.slice(0, 10).map((task) => (
+                  <div 
+                    key={task.id} 
+                    className="block cursor-pointer"
+                    onClick={() => handleTaskClick(task)}
+                  >
                     <div className="flex items-center space-x-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors duration-200 cursor-pointer">
                       <Avatar className="h-8 w-8">
                         <AvatarFallback>
@@ -338,10 +351,9 @@ export function DashboardOverview() {
                           <div className="text-xs text-red-600 font-medium">
                             {Math.ceil((new Date().getTime() - new Date(task.dueDate).getTime()) / (1000 * 60 * 60 * 24))} days overdue
                           </div>
-                        )}
-                      </div>
+                        )}                      </div>
                     </div>
-                  </Link>
+                  </div>
                 ))}
                 {filteredTasks.length > 10 && (
                   <div className="text-center pt-4">
@@ -395,9 +407,12 @@ export function DashboardOverview() {
                 </Link>
               </Button>
             </div>
-          </CardHeader><CardContent className="space-y-4">
-            {recentTasks.length > 0 ? recentTasks.map((task) => (
-              <Link key={task.id} href={`/tasks?id=${task.id}`} className="block">
+          </CardHeader><CardContent className="space-y-4">            {recentTasks.length > 0 ? recentTasks.map((task) => (
+              <div 
+                key={task.id} 
+                className="block cursor-pointer"
+                onClick={() => handleTaskClick(task)}
+              >
                 <div className="flex items-center space-x-4 p-2 rounded-lg hover:bg-muted/50 transition-colors duration-200 cursor-pointer">
                   <Avatar className="h-8 w-8">
                     <AvatarFallback>
@@ -414,12 +429,11 @@ export function DashboardOverview() {
                         {task.priority}
                       </Badge>
                     </div>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
+                  </div>                  <div className="text-xs text-muted-foreground">
                     {task.dueDate ? `Due ${new Date(task.dueDate).toLocaleDateString()}` : 'No due date'}
                   </div>
                 </div>
-              </Link>
+              </div>
             )) : (
               <p className="text-sm text-muted-foreground">No recent tasks</p>
             )}
@@ -441,27 +455,40 @@ export function DashboardOverview() {
                 </Link>
               </Button>
             </div>
-          </CardHeader>          <CardContent className="space-y-4">
-            {upcomingDeadlines.length > 0 ? upcomingDeadlines.map((task) => (
-              <Link key={task.id} href={`/tasks?id=${task.id}`} className="block">
+          </CardHeader>          <CardContent className="space-y-4">            {upcomingDeadlines.length > 0 ? upcomingDeadlines.map((task) => (
+              <div 
+                key={task.id} 
+                className="block cursor-pointer"
+                onClick={() => handleTaskClick(task)}
+              >
                 <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50 transition-colors duration-200 cursor-pointer">
                   <div>
                     <p className="text-sm font-medium">{task.title}</p>
                     <p className="text-xs text-muted-foreground">
                       {task.epic?.title ? `Epic: ${task.epic.title}` : 'Task'}
                     </p>
-                  </div>
-                  <div className="text-sm text-muted-foreground">
+                  </div>                  <div className="text-sm text-muted-foreground">
                     {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No date'}
                   </div>
                 </div>
-              </Link>
+              </div>
             )) : (
               <p className="text-sm text-muted-foreground">No upcoming deadlines</p>
             )}
-          </CardContent>
-        </Card>
+          </CardContent>        </Card>
       </div>
+
+      {/* Task Edit Dialog */}
+      <TaskDialog 
+        mode="edit"
+        open={editTaskOpen} 
+        onOpenChange={setEditTaskOpen}
+        task={editingTask}
+        onTaskUpdated={() => {
+          setEditTaskOpen(false)
+          setEditingTask(null)
+        }}
+      />
     </div>
   )
 }
