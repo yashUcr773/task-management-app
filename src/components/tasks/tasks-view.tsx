@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -15,7 +15,6 @@ import { useWebSocket } from "@/hooks/use-websocket"
 import { TasksWithUsersAndTags } from "@/types/all-types"
 import { 
   Plus, 
-  Filter, 
   Search,
   LayoutGrid,
   Table,
@@ -26,31 +25,45 @@ import {
   AlertCircle,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { TaskFilters, FilterState } from "@/components/tasks/task-filters"
 import { toast } from "sonner"
 
 export function TasksView() {
   const searchParams = useSearchParams()
   const router = useRouter()
-    const [createTaskOpen, setCreateTaskOpen] = useState(false)
+  
+  const [createTaskOpen, setCreateTaskOpen] = useState(false)
   const [editTaskOpen, setEditTaskOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<TasksWithUsersAndTags | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [taskDetailsOpen, setTaskDetailsOpen] = useState(false)
-  const [showArchived, setShowArchived] = useState(false)
-    // URL parameter filtering
+  const [showArchived, setShowArchived] = useState(() => searchParams?.get('showArchived') === 'true')
+  const [currentFilters, setCurrentFilters] = useState<FilterState>(() => ({
+    status: searchParams?.get('status')?.split(',').filter(Boolean) || [],
+    priority: searchParams?.get('priority')?.split(',').filter(Boolean) || [],
+    assigneeId: searchParams?.get('assigneeId')?.split(',').filter(Boolean) || [],
+    epicId: searchParams?.get('epicId')?.split(',').filter(Boolean) || [],
+    sprintId: searchParams?.get('sprintId')?.split(',').filter(Boolean) || [],
+    showArchived: searchParams?.get('showArchived') === 'true',
+    overdue: searchParams?.get('filter') === 'overdue',
+  }))
+  
+  // URL parameter filtering
   const statusFilter = searchParams?.get('status')
   const filterParam = searchParams?.get('filter')
   const taskIdParam = searchParams?.get('id')
-  
-  // Determine real-time hook options based on URL parameters
+    // Determine real-time hook options based on current filters
   const hookOptions = useMemo(() => ({
     organizationId: 'org1', // This would come from context/props
     enableRealTime: true,
     showToasts: true,
-    showArchived,
-    ...(statusFilter && { status: [statusFilter] })
-  }), [showArchived, statusFilter])// Real-time tasks hook with WebSocket integration
+    showArchived: currentFilters.showArchived,
+    ...(currentFilters.status.length > 0 && { status: currentFilters.status }),
+    ...(currentFilters.assigneeId.length > 0 && { assigneeId: currentFilters.assigneeId[0] }), // Use first selected assignee
+    ...(currentFilters.epicId.length > 0 && { epicId: currentFilters.epicId[0] }), // Use first selected epic
+    ...(currentFilters.sprintId.length > 0 && { sprintId: currentFilters.sprintId[0] }), // Use first selected sprint
+  }), [currentFilters])// Real-time tasks hook with WebSocket integration
   const {
     tasks,
     isLoading,
@@ -73,8 +86,7 @@ export function TasksView() {
       setTaskDetailsOpen(true)
     }
   }, [taskIdParam])
-  
-  // Filter tasks based on URL parameters and search query
+    // Filter tasks based on current filters and search query
   const getFilteredTasks = () => {
     let filtered = tasks.filter((task: TasksWithUsersAndTags) =>
       task.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -82,7 +94,22 @@ export function TasksView() {
       task.assignee?.name?.toLowerCase().includes(searchQuery.toLowerCase())
     )
     
+    // Apply priority filter
+    if (currentFilters.priority.length > 0) {
+      filtered = filtered.filter((task: TasksWithUsersAndTags) => 
+        currentFilters.priority.includes(task.priority)
+      )
+    }
+    
     // Apply overdue filter if specified
+    if (currentFilters.overdue) {
+      const now = new Date()
+      filtered = filtered.filter((task: TasksWithUsersAndTags) => 
+        task.dueDate && new Date(task.dueDate) < now && task.status !== 'RELEASED'
+      )
+    }
+    
+    // Apply legacy URL filter for backward compatibility
     if (filterParam === 'overdue') {
       const now = new Date()
       filtered = filtered.filter((task: TasksWithUsersAndTags) => 
@@ -110,17 +137,37 @@ export function TasksView() {
     setEditingTask(task)
     setEditTaskOpen(true)
   }
-
   const handleRefresh = () => {
     refreshTasks()
     toast.info('Refreshing tasks...')  
   }
+    const handleFiltersChange = useCallback((filters: FilterState) => {
+    setCurrentFilters(filters)
+    // Sync showArchived state for backward compatibility
+    setShowArchived(filters.showArchived)
+  }, [])
   
   const clearFilters = () => {
+    setCurrentFilters({
+      status: [],
+      priority: [],
+      assigneeId: [],
+      epicId: [],
+      sprintId: [],
+      showArchived: false,
+      overdue: false,
+    })
+    setShowArchived(false)
     router.push('/tasks')
   }
-  
-  const hasActiveFilters = statusFilter || filterParam
+    const hasActiveFilters = !!(statusFilter || filterParam || 
+    currentFilters.status.length > 0 ||
+    currentFilters.priority.length > 0 ||
+    currentFilters.assigneeId.length > 0 ||
+    currentFilters.epicId.length > 0 ||
+    currentFilters.sprintId.length > 0 ||
+    currentFilters.showArchived ||
+    currentFilters.overdue)
   
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -151,22 +198,22 @@ export function TasksView() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 w-64"
-            />
-          </div>          <Button variant="outline" size="sm">
-            <Filter className="mr-2 h-4 w-4" />
-            Filter
-          </Button>
+            />          </div>
           
-          {hasActiveFilters && (
-            <Button variant="outline" size="sm" onClick={clearFilters}>
-              Clear Filters
-            </Button>
-          )}
+          <TaskFilters
+            onFiltersChange={handleFiltersChange}
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={clearFilters}
+          />
           
           <Button 
             variant={showArchived ? "default" : "outline"} 
             size="sm"
-            onClick={() => setShowArchived(!showArchived)}
+            onClick={() => {
+              const newShowArchived = !showArchived
+              setShowArchived(newShowArchived)
+              setCurrentFilters(prev => ({ ...prev, showArchived: newShowArchived }))
+            }}
           >
             {showArchived ? "Hide Archived" : "Show Archived"}
           </Button>

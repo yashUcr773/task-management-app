@@ -336,7 +336,7 @@ export function TasksCalendar({ tasks = [], onTaskClick, isLoading }: TasksCalen
                       <div className="flex flex-wrap gap-1 mt-2">
                         {task.tags.slice(0, 2).map((tag) => (
                           <Badge
-                            key={tag.name}
+                            key={tag.id}
                             variant="outline"
                             className="text-xs"
                             style={{ borderColor: tag.color || '#000000', color: tag.color || '#000000' }}
