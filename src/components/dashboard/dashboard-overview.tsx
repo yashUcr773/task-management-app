@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { 
   CheckSquare, 
   Clock, 
@@ -18,10 +18,41 @@ import { TaskDialog } from "@/components/tasks/task-dialog"
 import { useRealTimeTasks } from "@/hooks/use-real-time-tasks"
 import { useEffect, useState } from "react"
 import { TasksWithUsersAndTags } from "@/types/all-types"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface TeamStats {
   totalMembers: number
   totalTeams: number
+}
+
+interface TeamMember {
+  id: string
+  role: string
+  user: {
+    id: string
+    name: string
+    email: string
+    image?: string | null
+  }
+}
+
+interface Team {
+  id: string
+  name: string
+  description?: string
+  organization: {
+    id: string
+    name: string
+  }
+  members: TeamMember[]
+  _count: {
+    tasks: number
+  }
 }
 
 interface TeamWithMembers {
@@ -41,6 +72,8 @@ export function DashboardOverview() {
   const { tasks, taskStats, overdueTasks } = useRealTimeTasks()
   console.log("🚀 ~ DashboardOverview ~ tasks:", tasks)
   const [teamStats, setTeamStats] = useState<TeamStats>({ totalMembers: 0, totalTeams: 0 })
+  const [teams, setTeams] = useState<Team[]>([])
+  const [showTeamMembers, setShowTeamMembers] = useState(false)
   const [selectedFilter, setSelectedFilter] = useState<TaskFilter>(null)
   const [editTaskOpen, setEditTaskOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<TasksWithUsersAndTags | null>(null)
@@ -56,7 +89,6 @@ export function DashboardOverview() {
       return "Good evening! 🌙"
     }
   }
-
   // Fetch team statistics
   useEffect(() => {
     const fetchTeamStats = async () => {
@@ -71,6 +103,7 @@ export function DashboardOverview() {
             totalMembers,
             totalTeams: teams.length
           })
+          setTeams(teams) // Store full team data
         }
       } catch (error) {
         console.error('Failed to fetch team stats:', error)
@@ -78,7 +111,26 @@ export function DashboardOverview() {
     }
 
     fetchTeamStats()
-  }, [])  // Get recent tasks (last 5 tasks)
+  }, [])
+
+  // Get role color styling
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case "ADMIN":
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+      case "USER":
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+      case "VIEWER":
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
+    }
+  }
+
+  // Handle team members card click
+  const handleTeamMembersClick = () => {
+    setShowTeamMembers(true)
+  }// Get recent tasks (last 5 tasks)
   const recentTasks = tasks.slice(0, 5)
   
   // Get filtered tasks based on selected filter
@@ -233,25 +285,25 @@ export function DashboardOverview() {
               }
             </p>
           </CardContent>
-        </Card>
-        
-        <Link href="/teams" className="block">
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Team Members</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{teamStats.totalMembers}</div>
-              <p className="text-xs text-muted-foreground">
-                {teamStats.totalTeams === 1 
-                  ? `Across ${teamStats.totalTeams} team`
-                  : `Across ${teamStats.totalTeams} teams`
-                }
-              </p>
-            </CardContent>
-          </Card>
-        </Link>      </div>
+        </Card>        
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+          onClick={handleTeamMembersClick}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Team Members</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{teamStats.totalMembers}</div>
+            <p className="text-xs text-muted-foreground">
+              {teamStats.totalTeams === 1 
+                ? `Across ${teamStats.totalTeams} team`
+                : `Across ${teamStats.totalTeams} teams`
+              }
+            </p>
+          </CardContent>
+        </Card></div>
 
       {/* Filtered Tasks Section */}
       {selectedFilter && (
@@ -476,9 +528,7 @@ export function DashboardOverview() {
               <p className="text-sm text-muted-foreground">No upcoming deadlines</p>
             )}
           </CardContent>        </Card>
-      </div>
-
-      {/* Task Edit Dialog */}
+      </div>      {/* Task Edit Dialog */}
       <TaskDialog 
         mode="edit"
         open={editTaskOpen} 
@@ -489,6 +539,89 @@ export function DashboardOverview() {
           setEditingTask(null)
         }}
       />
+
+      {/* Team Members Dialog */}
+      <Dialog open={showTeamMembers} onOpenChange={setShowTeamMembers}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Team Members
+              <Badge variant="secondary" className="ml-2">
+                {teamStats.totalMembers} total
+              </Badge>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {teams.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No teams found</p>
+              </div>
+            ) : (
+              teams.map((team) => (
+                <Card key={team.id}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-lg">{team.name}</CardTitle>
+                        <CardDescription className="flex items-center gap-2">
+                          {team.description && (
+                            <span>{team.description}</span>
+                          )}
+                          <Badge variant="outline" className="text-xs">
+                            {team.organization.name}
+                          </Badge>
+                        </CardDescription>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Users className="h-4 w-4" />
+                          <span>{team.members.length} members</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <CheckSquare className="h-4 w-4" />
+                          <span>{team._count.tasks} tasks</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {team.members.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No members in this team</p>
+                      ) : (
+                        <div className="grid gap-3">
+                          {team.members.map((member) => (
+                            <div key={member.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10">
+                                  <AvatarImage src={member.user.image || undefined} />
+                                  <AvatarFallback>
+                                    {member.user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="font-medium">{member.user.name}</p>
+                                  <p className="text-sm text-muted-foreground">{member.user.email}</p>
+                                </div>
+                              </div>
+                              <Badge variant="secondary" className={`${getRoleColor(member.role)}`}>
+                                {member.role}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
