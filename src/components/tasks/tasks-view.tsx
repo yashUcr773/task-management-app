@@ -31,20 +31,21 @@ import { toast } from "sonner"
 export function TasksView() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  
-  const [createTaskOpen, setCreateTaskOpen] = useState(false)
+    const [createTaskOpen, setCreateTaskOpen] = useState(false)
   const [editTaskOpen, setEditTaskOpen] = useState(false)
   const [editingTask, setEditingTask] = useState<TasksWithUsersAndTags | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [taskDetailsOpen, setTaskDetailsOpen] = useState(false)
   const [showArchived, setShowArchived] = useState(() => searchParams?.get('showArchived') === 'true')
+  
   const [currentFilters, setCurrentFilters] = useState<FilterState>(() => ({
     status: searchParams?.get('status')?.split(',').filter(Boolean) || [],
     priority: searchParams?.get('priority')?.split(',').filter(Boolean) || [],
     assigneeId: searchParams?.get('assigneeId')?.split(',').filter(Boolean) || [],
     epicId: searchParams?.get('epicId')?.split(',').filter(Boolean) || [],
     sprintId: searchParams?.get('sprintId')?.split(',').filter(Boolean) || [],
+    teamId: searchParams?.get('teamId')?.split(',').filter(Boolean) || [],
     showArchived: searchParams?.get('showArchived') === 'true',
     overdue: searchParams?.get('filter') === 'overdue',
   }))
@@ -53,17 +54,20 @@ export function TasksView() {
   const statusFilter = searchParams?.get('status')
   const filterParam = searchParams?.get('filter')
   const taskIdParam = searchParams?.get('id')
-    // Determine real-time hook options based on current filters
+  const teamIdParam = searchParams?.get('teamId')
+  
+  // Determine real-time hook options based on current filters
   const hookOptions = useMemo(() => ({
     organizationId: 'org1', // This would come from context/props
     enableRealTime: true,
     showToasts: true,
     showArchived: currentFilters.showArchived,
+    ...(teamIdParam && { teamId: teamIdParam }),
     ...(currentFilters.status.length > 0 && { status: currentFilters.status }),
     ...(currentFilters.assigneeId.length > 0 && { assigneeId: currentFilters.assigneeId[0] }), // Use first selected assignee
     ...(currentFilters.epicId.length > 0 && { epicId: currentFilters.epicId[0] }), // Use first selected epic
     ...(currentFilters.sprintId.length > 0 && { sprintId: currentFilters.sprintId[0] }), // Use first selected sprint
-  }), [currentFilters])// Real-time tasks hook with WebSocket integration
+  }), [currentFilters, teamIdParam])// Real-time tasks hook with WebSocket integration
   const {
     tasks,
     isLoading,
@@ -146,7 +150,6 @@ export function TasksView() {
     // Sync showArchived state for backward compatibility
     setShowArchived(filters.showArchived)
   }, [])
-  
   const clearFilters = () => {
     setCurrentFilters({
       status: [],
@@ -154,18 +157,21 @@ export function TasksView() {
       assigneeId: [],
       epicId: [],
       sprintId: [],
+      teamId: [],
       showArchived: false,
       overdue: false,
     })
     setShowArchived(false)
     router.push('/tasks')
   }
-    const hasActiveFilters = !!(statusFilter || filterParam || 
+  
+  const hasActiveFilters = !!(statusFilter || filterParam || teamIdParam ||
     currentFilters.status.length > 0 ||
     currentFilters.priority.length > 0 ||
     currentFilters.assigneeId.length > 0 ||
     currentFilters.epicId.length > 0 ||
     currentFilters.sprintId.length > 0 ||
+    currentFilters.teamId.length > 0 ||
     currentFilters.showArchived ||
     currentFilters.overdue)
   
@@ -181,6 +187,7 @@ export function TasksView() {
                 <span className="ml-2 text-blue-600">
                   • Filtered{statusFilter && ` by ${statusFilter.replace('_', ' ')}`}
                   {filterParam && ` (${filterParam})`}
+                  {teamIdParam && ` by team`}
                 </span>
               )}
             </p>

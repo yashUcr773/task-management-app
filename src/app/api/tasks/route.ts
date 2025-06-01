@@ -258,6 +258,7 @@ export async function GET(request: NextRequest) {
     const assigneeId = searchParams.get("assigneeId")
     const epicId = searchParams.get("epicId")
     const sprintId = searchParams.get("sprintId")
+    const teamId = searchParams.get("teamId")
     const showArchived = searchParams.get("showArchived") === "true"
 
     // Get the current user
@@ -302,24 +303,75 @@ export async function GET(request: NextRequest) {
         { title: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } }
       ]
-    }
-
-    if (status) {
-      where.status = status
+    }    if (status) {
+      // Handle both single status and comma-separated statuses
+      const statuses = status.split(',').filter(Boolean)
+      if (statuses.length === 1) {
+        where.status = statuses[0]
+      } else if (statuses.length > 1) {
+        where.status = {
+          in: statuses
+        }
+      }
     }
 
     if (priority) {
-      where.priority = priority
+      // Handle both single priority and comma-separated priorities
+      const priorities = priority.split(',').filter(Boolean)
+      if (priorities.length === 1) {
+        where.priority = priorities[0]
+      } else if (priorities.length > 1) {
+        where.priority = {
+          in: priorities
+        }
+      }
     }
 
     if (assigneeId) {
-      where.assigneeId = assigneeId
+      // Handle both single assignee and comma-separated assignees
+      const assigneeIds = assigneeId.split(',').filter(Boolean)
+      if (assigneeIds.length === 1) {
+        where.assigneeId = assigneeIds[0]
+      } else if (assigneeIds.length > 1) {
+        where.assigneeId = {
+          in: assigneeIds
+        }
+      }
     }
 
     if (epicId) {
-      where.epicId = epicId
-    }    if (sprintId) {
-      where.sprintId = sprintId
+      // Handle both single epic and comma-separated epics
+      const epicIds = epicId.split(',').filter(Boolean)
+      if (epicIds.length === 1) {
+        where.epicId = epicIds[0]
+      } else if (epicIds.length > 1) {
+        where.epicId = {
+          in: epicIds
+        }      }
+    }
+
+    if (sprintId) {
+      // Handle both single sprint and comma-separated sprints
+      const sprintIds = sprintId.split(',').filter(Boolean)
+      if (sprintIds.length === 1) {
+        where.sprintId = sprintIds[0]
+      } else if (sprintIds.length > 1) {
+        where.sprintId = {
+          in: sprintIds
+        }
+      }
+    }
+
+    if (teamId) {
+      // Handle both single team ID and comma-separated team IDs
+      const teamIds = teamId.split(',').filter(Boolean)
+      if (teamIds.length === 1) {
+        where.teamId = teamIds[0]
+      } else if (teamIds.length > 1) {
+        where.teamId = {
+          in: teamIds
+        }
+      }
     }
 
     // Filter by archived status (default to showing only non-archived tasks)

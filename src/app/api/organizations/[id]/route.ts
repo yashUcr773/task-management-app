@@ -108,3 +108,102 @@ export async function PATCH(
     )
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      )
+    }
+
+    const { id: organizationId } = await params
+
+    // Get the current user
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email }
+    })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      )
+    }
+
+    // Check if user is admin of this organization
+    const userOrganization = await prisma.userOrganization.findFirst({
+      where: {
+        userId: user.id,
+        organizationId: organizationId,
+        role: "ADMIN"
+      }
+    })
+
+    if (!userOrganization) {
+      return NextResponse.json(
+        { error: "Forbidden: Only admins can delete organizations" },
+        { status: 403 }
+      )
+    }
+
+    // Check if organization has any related data that should prevent deletion
+    const organization = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      include: {
+        _count: {
+          select: {
+            teams: true,
+            epics: true,
+            users: true
+          }
+        }
+      }
+    })
+
+    if (!organization) {
+      return NextResponse.json(
+        { error: "Organization not found" },
+        { status: 404 }
+      )
+    }
+
+    // For safety, prevent deletion if there are multiple users or related data
+    if (organization._count.users > 1 || organization._count.teams > 0 || organization._count.epics > 0) {
+      return NextResponse.json(
+        { 
+          error: "Cannot delete organization with existing members, teams, or epics. Remove all related data first.",
+          details: {
+            users: organization._count.users,
+            teams: organization._count.teams,
+            epics: organization._count.epics
+          }
+        },
+        { status: 400 }
+      )
+    }
+
+    // Delete the organization (cascade will handle related records)
+    await prisma.organization.delete({
+      where: { id: organizationId }
+    })
+
+    return NextResponse.json({
+      message: "Organization deleted successfully"
+    })
+
+  } catch (error) {
+    console.error("Error deleting organization:", error)
+    
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    )
+  }
+}

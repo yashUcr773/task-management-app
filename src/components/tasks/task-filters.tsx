@@ -8,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Filter, X, Calendar, User, Flag, Layers, Target } from "lucide-react"
+import { Filter, X, Calendar, User, Flag, Layers, Target, Users } from "lucide-react"
 
 interface User {
   id: string
@@ -30,6 +30,16 @@ interface Sprint {
   isActive: boolean
 }
 
+interface Team {
+  id: string
+  name: string
+  description?: string | null
+  organization: {
+    id: string
+    name: string
+  }
+}
+
 interface TaskFiltersProps {
   onFiltersChange: (filters: FilterState) => void
   hasActiveFilters: boolean
@@ -43,6 +53,7 @@ export interface FilterState {
   assigneeId: string[]
   epicId: string[]
   sprintId: string[]
+  teamId: string[]
   showArchived: boolean
   overdue: boolean
 }
@@ -66,10 +77,12 @@ const PRIORITY_OPTIONS = [
 export function TaskFilters({ onFiltersChange, hasActiveFilters, onClearFilters, basePath = '/tasks' }: TaskFiltersProps) {
   const searchParams = useSearchParams()
   const router = useRouter()
+  
   const [isOpen, setIsOpen] = useState(false)
   const [users, setUsers] = useState<User[]>([])
   const [epics, setEpics] = useState<Epic[]>([])
   const [sprints, setSprints] = useState<Sprint[]>([])
+  const [teams, setTeams] = useState<Team[]>([])
   const isInitializedRef = useRef(false)
   
   // Initialize filter state from URL parameters
@@ -79,9 +92,10 @@ export function TaskFilters({ onFiltersChange, hasActiveFilters, onClearFilters,
     assigneeId: searchParams?.get('assigneeId')?.split(',').filter(Boolean) || [],
     epicId: searchParams?.get('epicId')?.split(',').filter(Boolean) || [],
     sprintId: searchParams?.get('sprintId')?.split(',').filter(Boolean) || [],
+    teamId: searchParams?.get('teamId')?.split(',').filter(Boolean) || [],
     showArchived: searchParams?.get('showArchived') === 'true',
     overdue: searchParams?.get('filter') === 'overdue',
-  }))  // Load filter data when component mounts
+  }))// Load filter data when component mounts
   useEffect(() => {
     loadFilterData()
     // Notify parent of initial filters from URL only on mount
@@ -90,7 +104,6 @@ export function TaskFilters({ onFiltersChange, hasActiveFilters, onClearFilters,
       isInitializedRef.current = true
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
   // Sync URL when searchParams change (for browser back/forward)
   useEffect(() => {
     const urlFilters = {
@@ -99,6 +112,7 @@ export function TaskFilters({ onFiltersChange, hasActiveFilters, onClearFilters,
       assigneeId: searchParams?.get('assigneeId')?.split(',').filter(Boolean) || [],
       epicId: searchParams?.get('epicId')?.split(',').filter(Boolean) || [],
       sprintId: searchParams?.get('sprintId')?.split(',').filter(Boolean) || [],
+      teamId: searchParams?.get('teamId')?.split(',').filter(Boolean) || [],
       showArchived: searchParams?.get('showArchived') === 'true',
       overdue: searchParams?.get('filter') === 'overdue',
     }
@@ -124,16 +138,18 @@ export function TaskFilters({ onFiltersChange, hasActiveFilters, onClearFilters,
     }
     if (filters.epicId.length > 0) {
       params.set('epicId', filters.epicId.join(','))
-    }
-    if (filters.sprintId.length > 0) {
+    }    if (filters.sprintId.length > 0) {
       params.set('sprintId', filters.sprintId.join(','))
+    }
+    if (filters.teamId.length > 0) {
+      params.set('teamId', filters.teamId.join(','))
     }
     if (filters.showArchived) {
       params.set('showArchived', 'true')
     }
     if (filters.overdue) {
       params.set('filter', 'overdue')
-    }    const queryString = params.toString()
+    }const queryString = params.toString()
     const newUrl = queryString ? `${basePath}?${queryString}` : basePath
     
     // Only update URL if it's different to avoid unnecessary navigation
@@ -143,13 +159,13 @@ export function TaskFilters({ onFiltersChange, hasActiveFilters, onClearFilters,
 
     onFiltersChange(filters)
   }, [filters, router, basePath, onFiltersChange])
-
   const loadFilterData = async () => {
     try {
-      const [usersRes, epicsRes, sprintsRes] = await Promise.all([
+      const [usersRes, epicsRes, sprintsRes, teamsRes] = await Promise.all([
         fetch('/api/user/list'),
         fetch('/api/epics'),
         fetch('/api/sprints'),
+        fetch('/api/teams'),
       ])
 
       if (usersRes.ok) {
@@ -166,6 +182,11 @@ export function TaskFilters({ onFiltersChange, hasActiveFilters, onClearFilters,
         const sprintsData = await sprintsRes.json()
         setSprints(sprintsData.sprints || [])
       }
+
+      if (teamsRes.ok) {
+        const teamsData = await teamsRes.json()
+        setTeams(teamsData.teams || [])
+      }
     } catch (error) {
       console.error('Failed to load filter data:', error)
     }
@@ -177,8 +198,7 @@ export function TaskFilters({ onFiltersChange, hasActiveFilters, onClearFilters,
   ) => {
     setFilters(prev => ({ ...prev, [key]: value }))
   }
-
-  const toggleArrayFilter = <K extends keyof Pick<FilterState, 'status' | 'priority' | 'assigneeId' | 'epicId' | 'sprintId'>>(
+  const toggleArrayFilter = <K extends keyof Pick<FilterState, 'status' | 'priority' | 'assigneeId' | 'epicId' | 'sprintId' | 'teamId'>>(
     key: K,
     value: string
   ) => {
@@ -189,7 +209,6 @@ export function TaskFilters({ onFiltersChange, hasActiveFilters, onClearFilters,
         : [...prev[key], value]
     }))
   }
-
   const clearAllFilters = () => {
     setFilters({
       status: [],
@@ -197,12 +216,12 @@ export function TaskFilters({ onFiltersChange, hasActiveFilters, onClearFilters,
       assigneeId: [],
       epicId: [],
       sprintId: [],
+      teamId: [],
       showArchived: false,
       overdue: false,
     })
     onClearFilters()
   }
-
   const getActiveFilterCount = () => {
     return (
       filters.status.length +
@@ -210,6 +229,7 @@ export function TaskFilters({ onFiltersChange, hasActiveFilters, onClearFilters,
       filters.assigneeId.length +
       filters.epicId.length +
       filters.sprintId.length +
+      filters.teamId.length +
       (filters.showArchived ? 1 : 0) +
       (filters.overdue ? 1 : 0)
     )
@@ -288,9 +308,7 @@ export function TaskFilters({ onFiltersChange, hasActiveFilters, onClearFilters,
           </Badge>
         )
       }
-    })
-
-    // Sprint badges
+    })    // Sprint badges
     filters.sprintId.forEach(sprintId => {
       const sprint = sprints.find(s => s.id === sprintId)
       if (sprint) {
@@ -299,6 +317,24 @@ export function TaskFilters({ onFiltersChange, hasActiveFilters, onClearFilters,
             {sprint.name}
             <button
               onClick={() => toggleArrayFilter('sprintId', sprintId)}
+              className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </Badge>
+        )
+      }
+    })
+
+    // Team badges
+    filters.teamId.forEach(teamId => {
+      const team = teams.find(t => t.id === teamId)
+      if (team) {
+        badges.push(
+          <Badge key={`team-${teamId}`} variant="secondary" className="text-xs">
+            {team.name}
+            <button
+              onClick={() => toggleArrayFilter('teamId', teamId)}
               className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
             >
               <X className="h-3 w-3" />
@@ -504,6 +540,32 @@ export function TaskFilters({ onFiltersChange, hasActiveFilters, onClearFilters,
                           {sprint.isActive && (
                             <Badge variant="secondary" className="text-xs">Active</Badge>
                           )}
+                        </label>
+                      </div>
+                    ))}
+                  </div>                </div>
+
+                <Separator />
+
+                {/* Team Filter */}
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="h-4 w-4" />
+                    <label className="text-sm font-medium">Team</label>
+                  </div>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {teams.map(team => (
+                      <div key={team.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`team-${team.id}`}
+                          checked={filters.teamId.includes(team.id)}
+                          onCheckedChange={() => toggleArrayFilter('teamId', team.id)}
+                        />
+                        <label
+                          htmlFor={`team-${team.id}`}
+                          className="text-sm cursor-pointer"
+                        >
+                          {team.name}
                         </label>
                       </div>
                     ))}

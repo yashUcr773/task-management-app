@@ -19,6 +19,7 @@ import {
   Copy,
   LogOut,
   Edit,
+  Trash2,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -31,7 +32,11 @@ import {
 import { CreateOrganizationDialog } from "./create-organization-dialog"
 import { JoinOrganizationDialog } from "./join-organization-dialog"
 import { ManageOrganizationDialog } from "./manage-organization-dialog"
+import { OrganizationTeamsDialog } from "./organization-teams-dialog"
 import { EditOrganizationDialog } from "./edit-organization-dialog"
+import { OrganizationMembersModal } from "./organization-members-modal"
+import { OrganizationEpicsModal } from "./organization-epics-modal"
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 import { toast } from "sonner"
 
 interface User {
@@ -71,13 +76,16 @@ export function OrganizationsView() {
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
-  const [activeTab, setActiveTab] = useState("my-organizations")
-  
-  // Dialog states
+  const [activeTab, setActiveTab] = useState("my-organizations")  // Dialog states
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showJoinDialog, setShowJoinDialog] = useState(false)
   const [showManageDialog, setShowManageDialog] = useState(false)
+  const [showTeamsDialog, setShowTeamsDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [showMembersModal, setShowMembersModal] = useState(false)
+  const [showEpicsModal, setShowEpicsModal] = useState(false)
   const [selectedOrganization, setSelectedOrganization] = useState<Organization | null>(null)
 
   const fetchOrganizations = async () => {
@@ -119,24 +127,28 @@ export function OrganizationsView() {
     navigator.clipboard.writeText(inviteLink)
     toast.success("Invite link copied to clipboard!")
   }
+  const handleLeaveOrganization = (org: Organization) => {
+    setSelectedOrganization(org)
+    setShowLeaveDialog(true)
+  }
 
-  const handleLeaveOrganization = async (orgId: string) => {
-    if (confirm("Are you sure you want to leave this organization? This action cannot be undone.")) {
-      try {
-        const response = await fetch(`/api/organizations/${orgId}/leave`, {
-          method: 'POST'
-        })
+  const confirmLeaveOrganization = async () => {
+    if (!selectedOrganization) return
 
-        if (!response.ok) {
-          throw new Error('Failed to leave organization')
-        }
+    try {
+      const response = await fetch(`/api/organizations/${selectedOrganization.id}/leave`, {
+        method: 'POST'
+      })
 
-        toast.success("Left organization successfully")
-        fetchOrganizations() // Refresh the list
-      } catch (error) {
-        console.error("Error leaving organization:", error)
-        toast.error("Failed to leave organization")
+      if (!response.ok) {
+        throw new Error('Failed to leave organization')
       }
+
+      toast.success("Left organization successfully")
+      fetchOrganizations() // Refresh the list
+    } catch (error) {
+      console.error("Error leaving organization:", error)
+      toast.error("Failed to leave organization")
     }
   }
 
@@ -144,10 +156,49 @@ export function OrganizationsView() {
     setSelectedOrganization(org)
     setShowEditDialog(true)
   }
-
   const handleManageOrganization = (org: Organization) => {
     setSelectedOrganization(org)
     setShowManageDialog(true)
+  }
+    const handleViewTeams = (org: Organization) => {
+    setSelectedOrganization(org)
+    setShowTeamsDialog(true)
+  }
+
+  const handleViewMembers = (org: Organization) => {
+    setSelectedOrganization(org)
+    setShowMembersModal(true)
+  }
+
+  const handleViewEpics = (org: Organization) => {
+    setSelectedOrganization(org)
+    setShowEpicsModal(true)
+  }
+  
+  const handleDeleteOrganization = (org: Organization) => {
+    setSelectedOrganization(org)
+    setShowDeleteDialog(true)
+  }
+
+  const confirmDeleteOrganization = async () => {
+    if (!selectedOrganization) return
+
+    try {
+      const response = await fetch(`/api/organizations/${selectedOrganization.id}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete organization')
+      }
+
+      toast.success("Organization deleted successfully")
+      fetchOrganizations() // Refresh the list
+    } catch (error) {
+      console.error("Error deleting organization:", error)
+      toast.error(error instanceof Error ? error.message : "Failed to delete organization")
+    }
   }
 
   const refreshOrganizations = () => {
@@ -202,7 +253,6 @@ export function OrganizationsView() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="my-organizations">My Organizations</TabsTrigger>
-          <TabsTrigger value="all">All Organizations</TabsTrigger>
         </TabsList>
 
         <TabsContent value="my-organizations" className="space-y-4">
@@ -234,10 +284,9 @@ export function OrganizationsView() {
                   <Card key={org.id} className="hover:shadow-md transition-shadow">
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
+                        <div className="flex-1 min-w-0">                          <div className="flex items-center gap-2 mb-2">
                             <Building2 className="h-5 w-5 text-primary" />
-                            <CardTitle className="truncate">{org.name}</CardTitle>                            {isAdmin && (
+                            <CardTitle className="leading-tight">{org.name}</CardTitle>                            {isAdmin && (
                               <div title="Admin">
                                 <Crown className="h-4 w-4 text-yellow-500" />
                               </div>
@@ -270,11 +319,17 @@ export function OrganizationsView() {
                                   <Settings className="h-4 w-4 mr-2" />
                                   Manage Members
                                 </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleDeleteOrganization(org)}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete Organization
+                                </DropdownMenuItem>
                               </>
-                            )}
-                            <DropdownMenuSeparator />
+                            )}                            <DropdownMenuSeparator />
                             <DropdownMenuItem 
-                              onClick={() => handleLeaveOrganization(org.id)}
+                              onClick={() => handleLeaveOrganization(org)}
                               className="text-destructive"
                             >
                               <LogOut className="h-4 w-4 mr-2" />
@@ -289,27 +344,38 @@ export function OrganizationsView() {
                         </CardDescription>
                       )}
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      {/* Stats */}
+                    <CardContent className="space-y-4">                      {/* Stats */}
                       <div className="grid grid-cols-3 gap-4 text-center">
-                        <div>
-                          <div className="text-2xl font-bold text-primary">
+                        <button
+                          onClick={() => handleViewMembers(org)}
+                          className="hover:bg-muted rounded-lg p-2 transition-colors cursor-pointer"
+                          title="Click to view organization members"
+                        >
+                          <div className="text-2xl font-bold text-blue-600 hover:text-blue-800">
                             {org.users.length}
                           </div>
                           <div className="text-xs text-muted-foreground">Members</div>
-                        </div>
-                        <div>
-                          <div className="text-2xl font-bold text-primary">
+                        </button>
+                        <button
+                          onClick={() => handleViewTeams(org)}
+                          className="hover:bg-muted rounded-lg p-2 transition-colors cursor-pointer"
+                          title="Click to view organization teams"
+                        >
+                          <div className="text-2xl font-bold text-blue-600 hover:text-blue-800">
                             {org.teams.length}
                           </div>
                           <div className="text-xs text-muted-foreground">Teams</div>
-                        </div>
-                        <div>
-                          <div className="text-2xl font-bold text-primary">
+                        </button>
+                        <button
+                          onClick={() => handleViewEpics(org)}
+                          className="hover:bg-muted rounded-lg p-2 transition-colors cursor-pointer"
+                          title="Click to view organization epics"
+                        >
+                          <div className="text-2xl font-bold text-blue-600 hover:text-blue-800">
                             {org._count.epics}
                           </div>
                           <div className="text-xs text-muted-foreground">Epics</div>
-                        </div>
+                        </button>
                       </div>
 
                       {/* Recent Members */}
@@ -337,15 +403,13 @@ export function OrganizationsView() {
                             </div>
                           )}
                         </div>
-                      </div>
-
-                      {/* Quick Actions */}
+                      </div>                      {/* Quick Actions */}
                       <div className="flex gap-2">
                         <Button 
                           size="sm" 
                           variant="outline" 
                           className="flex-1"
-                          onClick={() => handleManageOrganization(org)}
+                          onClick={() => handleViewTeams(org)}
                         >
                           <Users className="h-4 w-4 mr-2" />
                           View Teams
@@ -367,13 +431,6 @@ export function OrganizationsView() {
             </div>
           )}
         </TabsContent>
-
-        <TabsContent value="all" className="space-y-4">
-          <div className="text-center py-12 text-muted-foreground">
-            <Building2 className="h-12 w-12 mx-auto mb-4" />
-            <p>Public organization discovery coming soon...</p>
-          </div>
-        </TabsContent>
       </Tabs>
 
       {/* Dialogs */}
@@ -387,15 +444,30 @@ export function OrganizationsView() {
         open={showJoinDialog}
         onOpenChange={setShowJoinDialog}
         onSuccess={refreshOrganizations}
-      />
-
-      {selectedOrganization && (
+      />      {selectedOrganization && (
         <>
           <ManageOrganizationDialog
             open={showManageDialog}
             onOpenChange={setShowManageDialog}
             organization={selectedOrganization}
             onSuccess={refreshOrganizations}
+          />          <OrganizationTeamsDialog
+            open={showTeamsDialog}
+            onOpenChange={setShowTeamsDialog}
+            organization={selectedOrganization}
+          />
+
+          <OrganizationMembersModal
+            open={showMembersModal}
+            onOpenChange={setShowMembersModal}
+            organization={selectedOrganization}
+            members={selectedOrganization?.users}
+          />
+
+          <OrganizationEpicsModal
+            open={showEpicsModal}
+            onOpenChange={setShowEpicsModal}
+            organization={selectedOrganization}
           />
 
           <EditOrganizationDialog
@@ -405,7 +477,49 @@ export function OrganizationsView() {
             onSuccess={refreshOrganizations}
           />
         </>
-      )}
+      )}{/* Confirmation Dialogs */}
+      <ConfirmationDialog
+        open={showLeaveDialog}
+        onOpenChange={setShowLeaveDialog}
+        title="Leave Organization"
+        description={
+          selectedOrganization
+            ? `Are you sure you want to leave "${selectedOrganization.name}"? 
+
+You will lose access to:
+• ${selectedOrganization.teams.length} team${selectedOrganization.teams.length !== 1 ? 's' : ''}
+• ${selectedOrganization._count.epics} epic${selectedOrganization._count.epics !== 1 ? 's' : ''}
+• All projects and data within this organization
+
+This action cannot be undone and you'll need a new invitation to rejoin.`
+            : ""
+        }
+        confirmText="Leave Organization"
+        variant="destructive"
+        onConfirm={confirmLeaveOrganization}
+      />
+
+      <ConfirmationDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Delete Organization"
+        description={
+          selectedOrganization
+            ? `Are you sure you want to permanently delete "${selectedOrganization.name}"?
+
+This will permanently remove:
+• ${selectedOrganization.users.length} member${selectedOrganization.users.length !== 1 ? 's' : ''}
+• ${selectedOrganization.teams.length} team${selectedOrganization.teams.length !== 1 ? 's' : ''}
+• ${selectedOrganization._count.epics} epic${selectedOrganization._count.epics !== 1 ? 's' : ''}
+• All associated projects and data
+
+This action cannot be undone and all data will be permanently lost.`
+            : ""
+        }
+        confirmText="Delete Organization"
+        variant="destructive"
+        onConfirm={confirmDeleteOrganization}
+      />
     </div>
   )
 }

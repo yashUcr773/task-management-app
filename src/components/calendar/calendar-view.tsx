@@ -17,15 +17,17 @@ import { toast } from "sonner"
 export function CalendarView() {
   const router = useRouter()
   const searchParams = useSearchParams()
-    const [searchQuery, setSearchQuery] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
   const [selectedTask, setSelectedTask] = useState<TasksWithUsersAndTags | null>(null)
   const [taskDialogOpen, setTaskDialogOpen] = useState(false)
+  
   const [currentFilters, setCurrentFilters] = useState<FilterState>(() => ({
     status: searchParams?.get('status')?.split(',').filter(Boolean) || [],
     priority: searchParams?.get('priority')?.split(',').filter(Boolean) || [],
     assigneeId: searchParams?.get('assigneeId')?.split(',').filter(Boolean) || [],
     epicId: searchParams?.get('epicId')?.split(',').filter(Boolean) || [],
     sprintId: searchParams?.get('sprintId')?.split(',').filter(Boolean) || [],
+    teamId: searchParams?.get('teamId')?.split(',').filter(Boolean) || [],
     showArchived: searchParams?.get('showArchived') === 'true',
     overdue: searchParams?.get('filter') === 'overdue',
   }))
@@ -111,26 +113,26 @@ export function CalendarView() {
   const handleFiltersChange = useCallback((filters: FilterState) => {
     setCurrentFilters(filters)
   }, [])
-  
-  const clearFilters = () => {
+    const clearFilters = () => {
     setCurrentFilters({
       status: [],
       priority: [],
       assigneeId: [],
       epicId: [],
       sprintId: [],
+      teamId: [],
       showArchived: false,
       overdue: false,
     })
     router.push('/calendar')
   }
-  
-  const hasActiveFilters = !!(statusFilter || filterParam || 
+    const hasActiveFilters = !!(statusFilter || filterParam || 
     currentFilters.status.length > 0 ||
     currentFilters.priority.length > 0 ||
     currentFilters.assigneeId.length > 0 ||
     currentFilters.epicId.length > 0 ||
     currentFilters.sprintId.length > 0 ||
+    currentFilters.teamId.length > 0 ||
     currentFilters.showArchived ||
     currentFilters.overdue)
 
