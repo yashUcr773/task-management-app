@@ -21,27 +21,13 @@ import { TaskComments } from "./task-comments"
 import TaskAttachments from "./task-attachments"
 import { toast } from "sonner"
 import { format } from "date-fns"
+import { AttachmentWithUser } from "@/types/all-types"
 
 interface User {
   id: string
   name: string | null
   email: string
   image: string | null
-}
-
-interface Attachment {
-  id: string;
-  originalName: string;
-  fileName: string;
-  filePath: string;
-  fileSize: number;
-  mimeType: string;
-  createdAt: string;
-  uploader: {
-    id: string;
-    name: string;
-    email: string;
-  };
 }
 
 interface Team {
@@ -117,7 +103,7 @@ export function TaskDetailsModal({
 }: TaskDetailsModalProps) {
   const [task, setTask] = useState<TaskDetails | null>(null)
   const [loading, setLoading] = useState(false)
-  const [attachments, setAttachments] = useState<Attachment[]>([])
+  const [attachments, setAttachments] = useState<AttachmentWithUser[]>([])
   const [currentUserId, setCurrentUserId] = useState<string | undefined>()
 
   const fetchTaskDetails = useCallback(async () => {

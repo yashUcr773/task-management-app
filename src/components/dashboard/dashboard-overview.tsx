@@ -10,7 +10,8 @@ import {
   AlertCircle, 
   Users, 
   Calendar,
-  ArrowRight
+  ArrowRight,
+  X
 } from "lucide-react"
 import Link from "next/link"
 import { useRealTimeTasks } from "@/hooks/use-real-time-tasks"
@@ -32,9 +33,12 @@ interface TeamWithMembers {
   }>
 }
 
+type TaskFilter = 'all' | 'in-progress' | 'overdue' | 'completed' | null
+
 export function DashboardOverview() {
   const { tasks, taskStats, overdueTasks } = useRealTimeTasks()
   const [teamStats, setTeamStats] = useState<TeamStats>({ totalMembers: 0, totalTeams: 0 })
+  const [selectedFilter, setSelectedFilter] = useState<TaskFilter>(null)
 
   // Get greeting based on time of day
   const getGreeting = () => {
@@ -69,9 +73,26 @@ export function DashboardOverview() {
     }
 
     fetchTeamStats()
-  }, [])
-  // Get recent tasks (last 5 tasks)
+  }, [])  // Get recent tasks (last 5 tasks)
   const recentTasks = tasks.slice(0, 5)
+  
+  // Get filtered tasks based on selected filter
+  const getFilteredTasks = () => {
+    switch (selectedFilter) {
+      case 'in-progress':
+        return tasks.filter(task => task.status === 'IN_DEV')
+      case 'overdue':
+        return overdueTasks
+      case 'completed':
+        return tasks.filter(task => task.status === 'RELEASED')
+      case 'all':
+        return tasks
+      default:
+        return []
+    }
+  }
+  
+  const filteredTasks = getFilteredTasks()
   
   // Calculate dynamic stats
   const getDynamicStats = () => {
@@ -123,78 +144,86 @@ export function DashboardOverview() {
           <p className="text-muted-foreground">Here&apos;s what&apos;s happening with your projects today.</p>
         </div>
       </div>      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-        <Link href="/tasks" className="block">
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
-              <CheckSquare className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{taskStats.total}</div>
-              <p className="text-xs text-muted-foreground">
-                {dynamicStats.newTasksThisWeek > 0 
-                  ? `+${dynamicStats.newTasksThisWeek} new this week`
-                  : 'No new tasks this week'
-                }
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-        
-        <Link href="/tasks?status=IN_DEV" className="block">
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-              <Clock className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{taskStats.inProgress}</div>
-              <p className="text-xs text-muted-foreground">
-                {dynamicStats.inProgressChange > 0 
-                  ? `+${dynamicStats.inProgressChange} since yesterday`
-                  : 'No recent changes'
-                }
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-        
-        <Link href="/tasks?filter=overdue" className="block">
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Overdue</CardTitle>
-              <AlertCircle className="h-4 w-4 text-red-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{overdueTasks.length}</div>
-              <p className="text-xs text-muted-foreground">
-                {overdueTasks.length > 0 
-                  ? 'Requires attention'
-                  : 'All tasks on track'
-                }
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-        
-        <Link href="/tasks?status=RELEASED" className="block">
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completed</CardTitle>
-              <CheckSquare className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{taskStats.completed}</div>
-              <p className="text-xs text-muted-foreground">
-                {dynamicStats.completedThisWeek > 0 
-                  ? `+${dynamicStats.completedThisWeek} this week`
-                  : 'No completions this week'
-                }
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">        <Card 
+          className={`cursor-pointer hover:shadow-lg transition-all duration-200 ${
+            selectedFilter === 'all' ? 'ring-2 ring-primary bg-primary/5' : ''
+          }`}
+          onClick={() => setSelectedFilter(selectedFilter === 'all' ? null : 'all')}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
+            <CheckSquare className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{taskStats.total}</div>
+            <p className="text-xs text-muted-foreground">
+              {dynamicStats.newTasksThisWeek > 0 
+                ? `+${dynamicStats.newTasksThisWeek} new this week`
+                : 'No new tasks this week'
+              }
+            </p>
+          </CardContent>
+        </Card>
+          <Card 
+          className={`cursor-pointer hover:shadow-lg transition-all duration-200 ${
+            selectedFilter === 'in-progress' ? 'ring-2 ring-blue-500 bg-blue-50' : ''
+          }`}
+          onClick={() => setSelectedFilter(selectedFilter === 'in-progress' ? null : 'in-progress')}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+            <Clock className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{taskStats.inProgress}</div>
+            <p className="text-xs text-muted-foreground">
+              {dynamicStats.inProgressChange > 0 
+                ? `+${dynamicStats.inProgressChange} since yesterday`
+                : 'No recent changes'
+              }
+            </p>
+          </CardContent>
+        </Card>
+          <Card 
+          className={`cursor-pointer hover:shadow-lg transition-all duration-200 ${
+            selectedFilter === 'overdue' ? 'ring-2 ring-red-500 bg-red-50' : ''
+          }`}
+          onClick={() => setSelectedFilter(selectedFilter === 'overdue' ? null : 'overdue')}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Overdue</CardTitle>
+            <AlertCircle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-600">{overdueTasks.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {overdueTasks.length > 0 
+                ? 'Requires attention'
+                : 'All tasks on track'
+              }
+            </p>
+          </CardContent>
+        </Card>
+          <Card 
+          className={`cursor-pointer hover:shadow-lg transition-all duration-200 ${
+            selectedFilter === 'completed' ? 'ring-2 ring-green-500 bg-green-50' : ''
+          }`}
+          onClick={() => setSelectedFilter(selectedFilter === 'completed' ? null : 'completed')}
+        >
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Completed</CardTitle>
+            <CheckSquare className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{taskStats.completed}</div>
+            <p className="text-xs text-muted-foreground">
+              {dynamicStats.completedThisWeek > 0 
+                ? `+${dynamicStats.completedThisWeek} this week`
+                : 'No completions this week'
+              }
+            </p>
+          </CardContent>
+        </Card>
         
         <Link href="/teams" className="block">
           <Card className="cursor-pointer hover:shadow-lg transition-shadow duration-200">
@@ -212,8 +241,143 @@ export function DashboardOverview() {
               </p>
             </CardContent>
           </Card>
-        </Link>
-      </div>
+        </Link>      </div>
+
+      {/* Filtered Tasks Section */}
+      {selectedFilter && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  {selectedFilter === 'all' && <CheckSquare className="h-5 w-5" />}
+                  {selectedFilter === 'in-progress' && <Clock className="h-5 w-5 text-blue-600" />}
+                  {selectedFilter === 'overdue' && <AlertCircle className="h-5 w-5 text-red-600" />}
+                  {selectedFilter === 'completed' && <CheckSquare className="h-5 w-5 text-green-600" />}
+                  {selectedFilter === 'all' && 'All Tasks'}
+                  {selectedFilter === 'in-progress' && 'In Progress Tasks'}
+                  {selectedFilter === 'overdue' && 'Overdue Tasks'}
+                  {selectedFilter === 'completed' && 'Completed Tasks'}
+                  <Badge variant="secondary" className="ml-2">
+                    {filteredTasks.length}
+                  </Badge>
+                </CardTitle>
+                <CardDescription>
+                  {selectedFilter === 'all' && 'All tasks in your workspace'}
+                  {selectedFilter === 'in-progress' && 'Tasks currently being worked on'}
+                  {selectedFilter === 'overdue' && 'Tasks that need immediate attention'}
+                  {selectedFilter === 'completed' && 'Successfully completed tasks'}
+                </CardDescription>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setSelectedFilter(null)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Clear Filter
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {filteredTasks.length > 0 ? (
+              <div className="space-y-3">
+                {filteredTasks.slice(0, 10).map((task) => (
+                  <Link key={task.id} href={`/tasks?id=${task.id}`} className="block">
+                    <div className="flex items-center space-x-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors duration-200 cursor-pointer">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>
+                          {task.assignee?.name ? task.assignee.name.slice(0, 2).toUpperCase() : 'UN'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium leading-none">{task.title}</p>
+                          {task.isArchived && <Badge variant="outline" className="text-xs">Archived</Badge>}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge 
+                            variant={
+                              task.status === 'IN_DEV' ? 'default' : 
+                              task.status === 'RELEASED' ? 'secondary' : 
+                              'outline'
+                            } 
+                            className="text-xs"
+                          >
+                            {task.status.replace('_', ' ')}
+                          </Badge>
+                          <Badge 
+                            variant={
+                              task.priority === 'HIGH' ? 'destructive' : 
+                              task.priority === 'MEDIUM' ? 'default' : 
+                              'secondary'
+                            } 
+                            className="text-xs"
+                          >
+                            {task.priority}
+                          </Badge>
+                          {task.tags && task.tags.length > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              {task.tags[0].name}
+                              {task.tags.length > 1 && ` +${task.tags.length - 1}`}
+                            </Badge>
+                          )}
+                        </div>
+                        {task.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-1">
+                            {task.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="text-right space-y-1">
+                        <div className="text-xs text-muted-foreground">
+                          {task.dueDate ? `Due ${new Date(task.dueDate).toLocaleDateString()}` : 'No due date'}
+                        </div>
+                        {selectedFilter === 'overdue' && task.dueDate && (
+                          <div className="text-xs text-red-600 font-medium">
+                            {Math.ceil((new Date().getTime() - new Date(task.dueDate).getTime()) / (1000 * 60 * 60 * 24))} days overdue
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+                {filteredTasks.length > 10 && (
+                  <div className="text-center pt-4">
+                    <Button variant="outline" asChild>
+                      <Link href={`/tasks${
+                        selectedFilter === 'in-progress' ? '?status=IN_DEV' :
+                        selectedFilter === 'overdue' ? '?filter=overdue' :
+                        selectedFilter === 'completed' ? '?status=RELEASED' :
+                        ''
+                      }`}>
+                        View all {filteredTasks.length} tasks
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="text-muted-foreground mb-2">
+                  {selectedFilter === 'all' && 'No tasks found'}
+                  {selectedFilter === 'in-progress' && 'No tasks in progress'}
+                  {selectedFilter === 'overdue' && 'No overdue tasks'}
+                  {selectedFilter === 'completed' && 'No completed tasks'}
+                </div>
+                <Button variant="outline" asChild>
+                  <Link href="/tasks">
+                    Go to Tasks
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Recent Tasks */}
@@ -231,7 +395,7 @@ export function DashboardOverview() {
                 </Link>
               </Button>
             </div>
-          </CardHeader>          <CardContent className="space-y-4">
+          </CardHeader><CardContent className="space-y-4">
             {recentTasks.length > 0 ? recentTasks.map((task) => (
               <Link key={task.id} href={`/tasks?id=${task.id}`} className="block">
                 <div className="flex items-center space-x-4 p-2 rounded-lg hover:bg-muted/50 transition-colors duration-200 cursor-pointer">

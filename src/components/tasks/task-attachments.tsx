@@ -5,26 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Upload, File, Download, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface Attachment {
-  id: string;
-  originalName: string;
-  fileName: string;
-  filePath: string;
-  fileSize: number;
-  mimeType: string;
-  createdAt: string;
-  uploader: {
-    id: string;
-    name: string;
-    email: string;
-  };
-}
+import { AttachmentWithUser } from '@/types/all-types';
 
 interface TaskAttachmentsProps {
   taskId: string;
-  attachments: Attachment[];
-  onAttachmentsChange: (attachments: Attachment[]) => void;
+  attachments: AttachmentWithUser[];
+  onAttachmentsChange: (attachments: AttachmentWithUser[]) => void;
   currentUserId?: string;
 }
 
@@ -103,7 +89,7 @@ export default function TaskAttachments({
     }
   };
 
-  const downloadFile = (attachment: Attachment) => {
+  const downloadFile = (attachment: AttachmentWithUser) => {
     // Create a temporary link to download the file
     const link = document.createElement('a');
     link.href = attachment.filePath;

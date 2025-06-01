@@ -1,4 +1,4 @@
-import { Tag, Task, User, Epic, Sprint, Team } from "@prisma/client";
+import { Tag, Task, User, Epic, Sprint, Team, Attachment } from "@prisma/client";
 
 export interface TasksWithUsersAndTags extends Task {
     creator: User;
@@ -11,4 +11,8 @@ export interface TasksWithUsersAndTags extends Task {
         comments?: number;
         attachments?: number;
     };
+}
+
+export interface AttachmentWithUser extends Attachment {
+    uploader: User;
 }

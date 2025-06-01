@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
@@ -35,12 +36,14 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon, X, Plus, User } from "lucide-react"
+import { CalendarIcon, X, Plus, User, Settings, MessageSquare, Paperclip } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { TasksWithUsersAndTags } from "@/types/all-types"
+import { AttachmentWithUser, TasksWithUsersAndTags } from "@/types/all-types"
 import { Priority,  TaskStatus } from "@prisma/client"
+import { TaskComments } from "./task-comments"
+import TaskAttachments from "./task-attachments"
 
 const taskFormSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title must be less than 100 characters"),
@@ -113,6 +116,9 @@ export function TaskDialog({
   const [users, setUsers] = useState<User[]>([])
   const [epics, setEpics] = useState<Epic[]>([])
   const [sprints, setSprints] = useState<Sprint[]>([])
+  const [activeTab, setActiveTab] = useState("details")
+  const [createdTaskId, setCreatedTaskId] = useState<string | null>(null)
+  const [attachments, setAttachments] = useState<AttachmentWithUser[]>([])
   const [defaultTags] = useState([
     { name: "Frontend", color: "#3b82f6" },
     { name: "Backend", color: "#10b981" },
@@ -137,10 +143,13 @@ export function TaskDialog({
       tags: [],
     },
   })
-
   // Reset form when task changes or dialog opens
   useEffect(() => {
     if (open) {
+      setActiveTab("details")
+      setCreatedTaskId(null)
+      setAttachments([])
+      
       if (isEditing && task) {
         const taskTags = task.tags?.map(t => ({
           name: t.name,
@@ -219,9 +228,10 @@ export function TaskDialog({
       const formattedData = {
         ...data,
         // Convert empty string values to null for proper API handling
-        assigneeId: data.assigneeId === "" || data.assigneeId === "unassigned" ? null : data.assigneeId,
+        assigneeId: data.assigneeId === "" || data.assigneeId === "unassigned" ? null : data.assigneeId,        
         epicId: data.epicId === "" || data.epicId === "no-epic" ? null : data.epicId,
-        sprintId: data.sprintId === "" || data.sprintId === "no-sprint" ? null : data.sprintId,        storyPoints: data.storyPoints === undefined || data.storyPoints === 0 ? null : data.storyPoints,
+        sprintId: data.sprintId === "" || data.sprintId === "no-sprint" ? null : data.sprintId,
+        storyPoints: data.storyPoints === undefined || data.storyPoints === 0 ? null : data.storyPoints,
         dueDate: data.dueDate ? data.dueDate.toISOString() : null,
         tags: selectedTags,
       }
@@ -243,11 +253,12 @@ export function TaskDialog({
         
         if (isEditing && onTaskUpdated) {
           onTaskUpdated(result.task)
+          onOpenChange(false)
+        } else {
+          // For create mode, set the created task ID so comments/attachments can be added
+          setCreatedTaskId(result.task.id)
+          setActiveTab("comments") // Switch to comments tab after creation
         }
-        // Remove the onSave call for create mode to prevent double creation
-        // The real-time hook will handle the new task automatically
-        
-        onOpenChange(false)
         
         // Reset form and tags for create mode
         if (!isEditing) {
@@ -283,7 +294,6 @@ export function TaskDialog({
     setSelectedTags(updatedTags)
     form.setValue("tags", updatedTags)
   }
-
   const handleSelectDefaultTag = (tag: { name: string; color: string }) => {
     if (!selectedTags.find(t => t.name === tag.name)) {
       const updatedTags = [...selectedTags, tag]
@@ -292,15 +302,58 @@ export function TaskDialog({
     }
   }
 
+  const handleAttachmentsChange = (newAttachments: AttachmentWithUser[]) => {
+    setAttachments(newAttachments)
+  }
+
+  const getCurrentTaskId = () => {
+    return isEditing ? task?.id : createdTaskId
+  }
+
+  const canShowCommentsAndAttachments = () => {
+    return isEditing || createdTaskId
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">        
         <DialogHeader>
           <DialogTitle>{isEditing ? "Edit Task" : "Create New Task"}</DialogTitle>
           <DialogDescription>
-            {isEditing ? "Update the task details below." : "Fill in the details to create a new task."}
+            {isEditing 
+              ? "Update the task details below." 
+              : createdTaskId 
+                ? "Task created successfully! You can now add comments and attachments."
+                : "Fill in the details to create a new task."
+            }
           </DialogDescription>
         </DialogHeader>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="details" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Details
+            </TabsTrigger>
+            <TabsTrigger 
+              value="comments" 
+              disabled={!canShowCommentsAndAttachments()}
+              className="flex items-center gap-2"
+            >
+              <MessageSquare className="h-4 w-4" />
+              Comments
+            </TabsTrigger>
+            <TabsTrigger 
+              value="attachments" 
+              disabled={!canShowCommentsAndAttachments()}
+              className="flex items-center gap-2"
+            >
+              <Paperclip className="h-4 w-4" />
+              Attachments
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="details" className="mt-6">
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -649,9 +702,7 @@ export function TaskDialog({
                   ))}
                 </div>
               </div>
-            </div>
-
-            <DialogFooter>
+            </div>            <DialogFooter>
               <Button 
                 type="button" 
                 variant="outline" 
@@ -665,6 +716,50 @@ export function TaskDialog({
             </DialogFooter>
           </form>
         </Form>
+          </TabsContent>          <TabsContent value="comments" className="mt-6">
+            {canShowCommentsAndAttachments() && getCurrentTaskId() ? (
+              <div className="space-y-4">
+                <TaskComments taskId={getCurrentTaskId()!} />
+                {!isEditing && (
+                  <div className="flex justify-end pt-4 border-t">
+                    <Button onClick={() => onOpenChange(false)}>
+                      Finish
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Comments will be available after the task is created.</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="attachments" className="mt-6">
+            {canShowCommentsAndAttachments() && getCurrentTaskId() ? (
+              <div className="space-y-4">
+                <TaskAttachments
+                  taskId={getCurrentTaskId()!}
+                  attachments={attachments}
+                  onAttachmentsChange={handleAttachmentsChange}
+                />
+                {!isEditing && (
+                  <div className="flex justify-end pt-4 border-t">
+                    <Button onClick={() => onOpenChange(false)}>
+                      Finish
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Paperclip className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Attachments will be available after the task is created.</p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   )

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -37,20 +37,19 @@ export function TasksView() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [taskDetailsOpen, setTaskDetailsOpen] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
-  
-  // URL parameter filtering
+    // URL parameter filtering
   const statusFilter = searchParams?.get('status')
   const filterParam = searchParams?.get('filter')
   const taskIdParam = searchParams?.get('id')
   
   // Determine real-time hook options based on URL parameters
-  const hookOptions = {
+  const hookOptions = useMemo(() => ({
     organizationId: 'org1', // This would come from context/props
     enableRealTime: true,
     showToasts: true,
     showArchived,
     ...(statusFilter && { status: [statusFilter] })
-  }    // Real-time tasks hook with WebSocket integration
+  }), [showArchived, statusFilter])// Real-time tasks hook with WebSocket integration
   const {
     tasks,
     isLoading,
